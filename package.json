@@ -1,0 +1,43 @@
+{
+  "name": "cicd-solution",
+  "version": "1.0.0",
+  "description": "A lightweight, modular CI/CD automation solution built with Bash scripts, integrated with BMad-Method agile development framework",
+  "main": "scripts/main.sh",
+  "scripts": {
+    "test": "./tests/run-tests.sh",
+    "test:verbose": "./tests/run-tests.sh --verbose",
+    "test:unit": "./tests/run-tests.sh --unit-only",
+    "test:integration": "./tests/run-tests.sh --int-only",
+    "lint": "shellcheck scripts/*.sh lib/**/*.sh",
+    "start": "./scripts/main.sh",
+    "logs": "./scripts/log-manager.sh",
+    "config": "./scripts/config-version-manager.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/cicd-solution.git"
+  },
+  "keywords": [
+    "ci-cd",
+    "automation",
+    "bash",
+    "shell",
+    "devops",
+    "deployment",
+    "bmad-method",
+    "continuous-integration",
+    "continuous-deployment"
+  ],
+  "author": "KingJohn <kj331704@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/cicd-solution/issues"
+  },
+  "homepage": "https://github.com/your-username/cicd-solution#readme",
+  "devDependencies": {
+    "shellcheck": "^2.0.0"
+  },
+  "engines": {
+    "bash": ">=4.0"
+  }
+}
