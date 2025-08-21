@@ -1,0 +1,24 @@
+# 开发环境配置
+global:
+  log_level: "DEBUG"
+  timeout: 1800
+  retry_count: 1
+
+build:
+  default_build_dir: "."
+  default_output_dir: "dist-dev"
+
+test:
+  default_test_type: "unit"
+  coverage_enabled: false
+  coverage_threshold: 50
+
+deploy:
+  default_target: "docker-compose"
+  default_strategy: "rolling"
+  default_replicas: 1
+  default_namespace: "dev"
+
+rollback:
+  default_steps: 1
+  default_version: "previous"

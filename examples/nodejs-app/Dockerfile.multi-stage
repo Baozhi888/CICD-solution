@@ -1,0 +1,47 @@
+# 多阶段构建以优化缓存和镜像大小
+FROM node:18-alpine AS base
+WORKDIR /app
+
+# 构建阶段 - 安装所有依赖
+FROM base AS dependencies
+# 先复制依赖文件以利用Docker层缓存
+COPY package*.json ./
+# 安装所有依赖（包括开发依赖）
+RUN npm ci
+
+# 构建阶段 - 编译应用（如果需要）
+FROM dependencies AS build
+COPY . .
+# 如果有构建步骤，执行构建
+RUN npm run build
+
+# 生产阶段 - 只安装生产依赖
+FROM base AS production
+# 仅安装生产依赖
+RUN npm install -g npm@latest
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# 复制源代码
+COPY src/ src/
+
+# 复制构建产物（如果需要）
+# COPY --from=build /app/dist ./dist
+
+# 创建非root用户
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+# 更改文件所有权
+RUN chown -R nextjs:nodejs /app
+USER nextjs
+
+# 暴露端口
+EXPOSE 3000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# 启动应用
+CMD ["npm", "start"]

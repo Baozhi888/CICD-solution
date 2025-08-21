@@ -1,0 +1,183 @@
+# 资源使用阈值告警配置
+# 用于配置CI/CD流程中的资源使用告警阈值
+
+# 告警配置
+alerts:
+  # CPU使用率告警
+  cpu:
+    enabled: true
+    warning_threshold: 70    # 警告阈值 (%)
+    critical_threshold: 85   # 严重阈值 (%)
+    check_interval: 30s      # 检查间隔
+    consecutive_triggers: 3  # 连续触发次数后告警
+
+  # 内存使用率告警
+  memory:
+    enabled: true
+    warning_threshold: 75    # 警告阈值 (%)
+    critical_threshold: 90   # 严重阈值 (%)
+    check_interval: 30s      # 检查间隔
+    consecutive_triggers: 3  # 连续触发次数后告警
+
+  # 磁盘使用率告警
+  disk:
+    enabled: true
+    warning_threshold: 80    # 警告阈值 (%)
+    critical_threshold: 95   # 严重阈值 (%)
+    check_interval: 1m       # 检查间隔
+    consecutive_triggers: 2  # 连续触发次数后告警
+
+  # 网络IO告警
+  network:
+    enabled: true
+    warning_threshold: 100   # 警告阈值 (MB/s)
+    critical_threshold: 500  # 严重阈值 (MB/s)
+    check_interval: 30s      # 检查间隔
+    consecutive_triggers: 3  # 连续触发次数后告警
+
+  # 构建时间告警
+  build_time:
+    enabled: true
+    warning_threshold: 300   # 警告阈值 (秒)
+    critical_threshold: 600  # 严重阈值 (秒)
+    check_interval: 1m       # 检查间隔
+
+  # 测试执行时间告警
+  test_time:
+    enabled: true
+    warning_threshold: 120   # 警告阈值 (秒)
+    critical_threshold: 300  # 严重阈值 (秒)
+    check_interval: 30s      # 检查间隔
+
+# 告警通知配置
+notifications:
+  # Slack通知
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#ci-cd-alerts"
+    username: "CI/CD Monitor"
+    icon_emoji: ":robot_face:"
+
+  # Email通知
+  email:
+    enabled: false
+    smtp_server: "smtp.company.com"
+    smtp_port: 587
+    username: "${EMAIL_USERNAME}"
+    password: "${EMAIL_PASSWORD}"
+    from_address: "ci-cd-monitor@company.com"
+    to_addresses:
+      - "dev-team@company.com"
+      - "ops-team@company.com"
+
+  # Webhook通知
+  webhook:
+    enabled: true
+    url: "${ALERT_WEBHOOK_URL}"
+    method: "POST"
+    headers:
+      Content-Type: "application/json"
+      Authorization: "Bearer ${WEBHOOK_TOKEN}"
+
+# 告警升级策略
+escalation:
+  # 第一级告警（警告级别）
+  level_1:
+    delay: 5m               # 告警后5分钟未处理则升级
+    notification_channels:
+      - "slack"
+      - "webhook"
+
+  # 第二级告警（严重级别）
+  level_2:
+    delay: 10m              # 告警后10分钟未处理则升级
+    notification_channels:
+      - "slack"
+      - "email"
+      - "webhook"
+    additional_recipients:
+      - "manager@company.com"
+
+  # 第三级告警（紧急级别）
+  level_3:
+    delay: 30m              # 告警后30分钟未处理则升级
+    notification_channels:
+      - "slack"
+      - "email"
+      - "webhook"
+      - "sms"
+    additional_recipients:
+      - "cto@company.com"
+      - "devops-team@company.com"
+
+# 告警抑制规则
+suppression:
+  # 在维护窗口期间抑制告警
+  maintenance_windows:
+    - start: "02:00"
+      end: "04:00"
+      days: ["Sunday", "Monday"]  # 每周日、一周的维护窗口
+
+  # 基于任务类型的告警抑制
+  job_type_suppression:
+    cron_jobs: true          # 抑制定时任务的告警
+    cleanup_jobs: true       # 抑制清理任务的告警
+
+# 告警模板
+templates:
+  # CPU告警模板
+  cpu_alert:
+    title: "CPU使用率过高告警"
+    message: |
+      Job: {{job_name}}
+      Build: {{build_number}}
+      Host: {{host_name}}
+      当前CPU使用率: {{current_value}}%
+      阈值: {{threshold}}%
+      时间: {{timestamp}}
+
+  # 内存告警模板
+  memory_alert:
+    title: "内存使用率过高告警"
+    message: |
+      Job: {{job_name}}
+      Build: {{build_number}}
+      Host: {{host_name}}
+      当前内存使用率: {{current_value}}%
+      阈值: {{threshold}}%
+      时间: {{timestamp}}
+
+  # 磁盘告警模板
+  disk_alert:
+    title: "磁盘使用率过高告警"
+    message: |
+      Job: {{job_name}}
+      Build: {{build_number}}
+      Host: {{host_name}}
+      当前磁盘使用率: {{current_value}}%
+      阈值: {{threshold}}%
+      时间: {{timestamp}}
+
+  # 构建时间告警模板
+  build_time_alert:
+    title: "构建时间过长告警"
+    message: |
+      Job: {{job_name}}
+      Build: {{build_number}}
+      Host: {{host_name}}
+      当前构建时间: {{current_value}}秒
+      阈值: {{threshold}}秒
+      时间: {{timestamp}}
+
+# 告警历史记录
+history:
+  retention_days: 30        # 告警历史保留天数
+  max_records: 10000        # 最大告警记录数
+  storage_path: "/var/log/ci-cd-alerts"  # 告警日志存储路径
+
+# 告警测试配置
+testing:
+  enabled: true
+  test_interval: 1h         # 告警系统自检间隔
+  test_notification_channel: "slack"  # 自检通知渠道

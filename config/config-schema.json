@@ -1,0 +1,215 @@
+# CI/CD 配置模式定义
+# 用于验证配置文件结构和数据类型
+
+{
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "log_level": {
+          "type": "string",
+          "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retry_interval": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["log_level", "timezone", "timeout", "retry_count", "retry_interval"]
+    },
+    "build": {
+      "type": "object",
+      "properties": {
+        "default_build_dir": {
+          "type": "string"
+        },
+        "default_output_dir": {
+          "type": "string"
+        },
+        "node": {
+          "type": "object",
+          "properties": {
+            "default_version": {
+              "type": "string"
+            },
+            "registry": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "python": {
+          "type": "object",
+          "properties": {
+            "default_version": {
+              "type": "string"
+            },
+            "pip_index_url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      },
+      "required": ["default_build_dir", "default_output_dir"]
+    },
+    "test": {
+      "type": "object",
+      "properties": {
+        "default_test_type": {
+          "type": "string",
+          "enum": ["unit", "integration", "e2e", "all"]
+        },
+        "coverage_enabled": {
+          "type": "boolean"
+        },
+        "coverage_threshold": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["default_test_type", "coverage_enabled", "coverage_threshold", "timeout"]
+    },
+    "deploy": {
+      "type": "object",
+      "properties": {
+        "default_target": {
+          "type": "string",
+          "enum": ["kubernetes", "docker-compose", "ssh"]
+        },
+        "default_strategy": {
+          "type": "string",
+          "enum": ["rolling", "blue-green", "canary"]
+        },
+        "default_replicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "default_namespace": {
+          "type": "string"
+        },
+        "kubernetes": {
+          "type": "object",
+          "properties": {
+            "kubectl_path": {
+              "type": "string"
+            },
+            "default_context": {
+              "type": "string"
+            }
+          }
+        },
+        "docker": {
+          "type": "object",
+          "properties": {
+            "docker_path": {
+              "type": "string"
+            },
+            "docker_compose_path": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": ["default_target", "default_strategy", "default_replicas", "default_namespace"]
+    },
+    "rollback": {
+      "type": "object",
+      "properties": {
+        "default_steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "default_version": {
+          "type": "string"
+        }
+      },
+      "required": ["default_steps", "default_version"]
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "secret_scan_enabled": {
+          "type": "boolean"
+        },
+        "secret_scan_tool": {
+          "type": "string"
+        },
+        "dependency_scan_enabled": {
+          "type": "boolean"
+        },
+        "dependency_scan_tool": {
+          "type": "string"
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "properties": {
+        "benchmark_enabled": {
+          "type": "boolean"
+        },
+        "benchmark_tool": {
+          "type": "string"
+        },
+        "resource_monitoring_enabled": {
+          "type": "boolean"
+        },
+        "resource_monitoring_tool": {
+          "type": "string"
+        }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "cache_dir": {
+          "type": "string"
+        },
+        "expiration_hours": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "notification": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["email", "slack", "webhook"]
+        },
+        "recipients": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": ["global", "build", "test", "deploy", "rollback"]
+}

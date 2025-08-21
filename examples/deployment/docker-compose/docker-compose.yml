@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  nodejs-app:
+    image: nodejs-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M

@@ -1,0 +1,168 @@
+// Jenkins主流水线文件
+pipeline {
+    agent any
+    
+    // 环境变量定义
+    environment {
+        APP_NAME = "${env.JOB_NAME.split('/').last()}"
+        DOCKER_REGISTRY = "registry.example.com"
+        DOCKER_IMAGE = "${DOCKER_REGISTRY}/${APP_NAME}"
+        KUBE_NAMESPACE = "production"
+    }
+    
+    // 参数定义
+    parameters {
+        choice(
+            name: 'DEPLOY_ENV',
+            choices: ['staging', 'production'],
+            description: '选择部署环境'
+        )
+        booleanParam(
+            name: 'RUN_INTEGRATION_TESTS',
+            defaultValue: true,
+            description: '是否运行集成测试'
+        )
+    }
+    
+    // 工具定义
+    tools {
+        nodejs "NodeJS-18"
+        jdk "JDK-11"
+    }
+    
+    // 流水线阶段
+    stages {
+        // 代码检出阶段
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+            }
+        }
+        
+        // 代码质量检查阶段
+        stage('Code Quality') {
+            parallel {
+                stage('Format Check') {
+                    steps {
+                        sh 'npm run format:check'
+                    }
+                }
+                stage('Lint') {
+                    steps {
+                        sh 'npm run lint'
+                    }
+                }
+            }
+        }
+        
+        // 安全扫描阶段
+        stage('Security Scan') {
+            agent {
+                docker {
+                    image 'aquasec/trivy:latest'
+                }
+            }
+            steps {
+                sh 'trivy fs --exit-code 1 --severity HIGH,CRITICAL .'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-results.json', allowEmptyArchive: true
+                }
+            }
+        }
+        
+        // 构建阶段
+        stage('Build') {
+            steps {
+                script {
+                    def version = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.BUILD_VERSION = version
+                }
+                sh 'npm ci'
+                sh 'npm run build'
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: false
+                }
+            }
+        }
+        
+        // 测试阶段
+        stage('Test') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        sh 'npm run test:unit -- --coverage'
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: 'coverage/lcov-report',
+                                reportFiles: 'index.html',
+                                reportName: 'Coverage Report'
+                            ])
+                            junit 'test-results.xml'
+                        }
+                    }
+                }
+                
+                stage('Integration Tests') {
+                    when {
+                        equals expected: true, actual: params.RUN_INTEGRATION_TESTS
+                    }
+                    steps {
+                        sh 'npm run test:integration'
+                    }
+                }
+            }
+        }
+        
+        // 构建和推送Docker镜像
+        stage('Docker Build and Push') {
+            steps {
+                script {
+                    docker.withRegistry("https://${DOCKER_REGISTRY}", 'docker-registry-credentials') {
+                        def customImage = docker.build("${DOCKER_IMAGE}:${env.BUILD_VERSION}")
+                        customImage.push()
+                        customImage.push('latest')
+                    }
+                }
+            }
+        }
+        
+        // 部署阶段
+        stage('Deploy') {
+            steps {
+                input message: "确认部署到 ${params.DEPLOY_ENV} 环境?", ok: 'Deploy'
+                script {
+                    deployApp(
+                        imageName: "${DOCKER_IMAGE}",
+                        imageTag: "${env.BUILD_VERSION}",
+                        environment: "${params.DEPLOY_ENV}"
+                    )
+                }
+            }
+        }
+    }
+    
+    // 流水线后处理
+    post {
+        success {
+            echo "流水线执行成功!"
+            slackSend channel: '#deployments', message: "SUCCESS: ${env.JOB_NAME} - Build ${env.BUILD_NUMBER} completed successfully"
+        }
+        failure {
+            echo "流水线执行失败!"
+            slackSend channel: '#deployments', message: "FAILURE: ${env.JOB_NAME} - Build ${env.BUILD_NUMBER} failed"
+        }
+        cleanup {
+            cleanWs()
+        }
+    }
+}

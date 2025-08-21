@@ -1,0 +1,58 @@
+# 部署作业定义
+
+## 部署到预发布环境
+deploy-staging:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  environment:
+    name: staging
+    url: https://staging.example.com
+  before_script:
+    - kubectl config use-context $STAGING_KUBE_CONTEXT
+    - echo "部署到预发布环境: $STAGING_NAMESPACE"
+  script:
+    - kubectl set image deployment/$APP_NAME $APP_NAME=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -n $STAGING_NAMESPACE
+    - kubectl rollout status deployment/$APP_NAME -n $STAGING_NAMESPACE
+  after_script:
+    - kubectl get pods -n $STAGING_NAMESPACE
+  only:
+    - develop
+  except:
+    - schedules
+
+## 部署到生产环境
+deploy-production:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  environment:
+    name: production
+    url: https://example.com
+  before_script:
+    - kubectl config use-context $PRODUCTION_KUBE_CONTEXT
+    - echo "部署到生产环境: $PRODUCTION_NAMESPACE"
+  script:
+    - kubectl set image deployment/$APP_NAME $APP_NAME=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA -n $PRODUCTION_NAMESPACE
+    - kubectl rollout status deployment/$APP_NAME -n $PRODUCTION_NAMESPACE
+  after_script:
+    - kubectl get pods -n $PRODUCTION_NAMESPACE
+  when: manual
+  only:
+    - main
+  except:
+    - schedules
+
+## 回滚作业
+rollback-production:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  environment:
+    name: production
+  before_script:
+    - kubectl config use-context $PRODUCTION_KUBE_CONTEXT
+  script:
+    - kubectl rollout undo deployment/$APP_NAME -n $PRODUCTION_NAMESPACE
+  when: manual
+  only:
+    - main
+  except:
+    - schedules

@@ -1,0 +1,28 @@
+# 预发布环境配置
+global:
+  log_level: "INFO"
+  timeout: 3600
+  retry_count: 3
+
+build:
+  default_build_dir: "."
+  default_output_dir: "dist-staging"
+
+test:
+  default_test_type: "integration"
+  coverage_enabled: true
+  coverage_threshold: 80
+
+deploy:
+  default_target: "kubernetes"
+  default_strategy: "canary"
+  default_replicas: 2
+  default_namespace: "staging"
+
+rollback:
+  default_steps: 1
+  default_version: "previous"
+
+security:
+  secret_scan_enabled: true
+  dependency_scan_enabled: true

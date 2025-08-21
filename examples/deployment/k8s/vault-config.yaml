@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-agent
+  labels:
+    app: vault-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault-agent
+  template:
+    metadata:
+      labels:
+        app: vault-agent
+    spec:
+      serviceAccountName: vault-sa
+      containers:
+      - name: vault-agent
+        image: hashicorp/vault:latest
+        env:
+        - name: VAULT_ADDR
+          value: "http://vault:8200"
+        - name: VAULT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: vault-token
+              key: token
+        volumeMounts:
+        - name: vault-secrets
+          mountPath: /vault/secrets
+        - name: vault-config
+          mountPath: /vault/config
+      volumes:
+      - name: vault-secrets
+        emptyDir: {}
+      - name: vault-config
+        configMap:
+          name: vault-agent-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-agent-config
+data:
+  vault-agent.hcl: |
+    exit_after_auth = true
+    pid_file = "/tmp/pidfile"
+    
+    auto_auth {
+      method "kubernetes" {
+        mount_path = "auth/kubernetes"
+        config = {
+          role = "app-role"
+        }
+      }
+      
+      sink "file" {
+        config = {
+          path = "/vault/secrets/.vault-token"
+        }
+      }
+    }
+    
+    template {
+      contents = "{{ with secret \"secret/data/myapp/config\" }}{{ .Data.data.db_password }}{{ end }}"
+      destination = "/vault/secrets/db-password"
+    }

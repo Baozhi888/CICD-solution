@@ -1,0 +1,166 @@
+name: Node.js CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  DEPLOY_ENV: production
+
+jobs:
+  # 部署到生产环境
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to Kubernetes
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          args: set image deployment/${{ github.event.repository.name }} ${{ github.event.repository.name }}=${{ env.DOCKER_REGISTRY }}/${{ github.repository }}:${{ github.sha }}
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/${{ github.event.repository.name }}
+          kubectl get pods
+
+  # 蓝绿部署
+  blue-green-deploy:
+    name: Blue-Green Deployment
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure Kubernetes
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy new version (green)
+        run: |
+          kubectl apply -f k8s/deployment-green.yaml
+          kubectl apply -f k8s/service-green.yaml
+
+      - name: Wait for green deployment to be ready
+        run: |
+          kubectl rollout status deployment/nodejs-app-green
+
+      - name: Switch traffic to green
+        run: |
+          kubectl patch service nodejs-app-service -p '{"spec":{"selector":{"app":"nodejs-app-green"}}}'
+
+      - name: Verify traffic switch
+        run: |
+          sleep 30
+          kubectl get pods
+
+      - name: Clean up blue deployment
+        run: |
+          kubectl delete -f k8s/deployment-blue.yaml
+          kubectl delete -f k8s/service-blue.yaml
+
+  # 滚动更新
+  rolling-update:
+    name: Rolling Update
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure Kubernetes
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Apply rolling update
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+
+      - name: Monitor rolling update
+        run: |
+          kubectl rollout status deployment/nodejs-app
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods
+          kubectl get services
+
+  # 金丝雀发布
+  canary-deploy:
+    name: Canary Deployment
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure Kubernetes
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy canary version
+        run: |
+          kubectl apply -f k8s/deployment-canary.yaml
+
+      - name: Wait for canary deployment to be ready
+        run: |
+          kubectl rollout status deployment/nodejs-app-canary
+
+      - name: Route 10% traffic to canary
+        run: |
+          kubectl patch service nodejs-app-service -p '{"spec":{"selector":{"app":"nodejs-app-canary","version":"canary"}}}'
+
+      - name: Monitor canary
+        run: |
+          sleep 60
+          kubectl get pods
+
+      - name: Promote to full deployment
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl patch service nodejs-app-service -p '{"spec":{"selector":{"app":"nodejs-app"}}}'
+
+      - name: Clean up canary deployment
+        run: |
+          kubectl delete -f k8s/deployment-canary.yaml
+
+  # 回滚机制
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    environment: production
+    if: failure()
+    steps:
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure Kubernetes
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Rollback to previous version
+        run: |
+          kubectl rollout undo deployment/nodejs-app
+
+      - name: Verify rollback
+        run: |
+          kubectl rollout status deployment/nodejs-app
+          kubectl get pods

@@ -1,0 +1,55 @@
+# GitLab CI 配置模板
+
+## 基础配置和变量
+variables:
+  # Docker相关变量
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_HOST: tcp://docker:2376
+  
+  # 应用相关变量
+  APP_NAME: ${CI_PROJECT_NAME}
+  DOCKER_REGISTRY: ${CI_REGISTRY}
+  DOCKER_IMAGE: ${CI_REGISTRY_IMAGE}
+  
+  # 环境相关变量
+  STAGING_NAMESPACE: ${CI_PROJECT_NAME}-staging
+  PRODUCTION_NAMESPACE: ${CI_PROJECT_NAME}-production
+
+## Docker服务配置
+services:
+  - docker:dind
+
+## 作业模板定义
+.docker-build-template: &docker-build-template
+  image: docker:latest
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHA .
+    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHA
+  after_script:
+    - docker logout
+
+.kubernetes-deploy-template: &kubernetes-deploy-template
+  image: bitnami/kubectl:latest
+  before_script:
+    - kubectl config use-context $KUBE_CONTEXT
+  script:
+    - kubectl set image deployment/$APP_NAME $APP_NAME=$DOCKER_IMAGE:$CI_COMMIT_SHA
+    - kubectl rollout status deployment/$APP_NAME
+  after_script:
+    - kubectl get pods
+
+## 作业包含
+include:
+  - local: '/gitlab/jobs/build.yml'
+  - local: '/gitlab/jobs/test.yml'
+  - local: '/gitlab/jobs/deploy.yml'
+
+## 工作流规则
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG

@@ -1,0 +1,85 @@
+# 动态资源分配配置文件
+# 用于根据任务类型和复杂度动态分配CI/CD资源
+
+# 资源类型定义
+resources:
+  small:
+    cpu: 1
+    memory: 2GB
+    timeout: 10m
+  medium:
+    cpu: 2
+    memory: 4GB
+    timeout: 20m
+  large:
+    cpu: 4
+    memory: 8GB
+    timeout: 30m
+  xlarge:
+    cpu: 8
+    memory: 16GB
+    timeout: 60m
+
+# 任务资源配置映射
+task_resource_mapping:
+  code-quality:
+    resource: small
+    parallelism: 1
+  unit-test:
+    resource: medium
+    parallelism: 3
+  integration-test:
+    resource: large
+    parallelism: 2
+  e2e-test:
+    resource: xlarge
+    parallelism: 1
+  security-scan:
+    resource: medium
+    parallelism: 1
+  build:
+    resource: large
+    parallelism: 1
+
+# 动态资源分配策略
+resource_allocation_strategy:
+  # 根据代码变更量调整资源
+  code_change_based:
+    enabled: true
+    thresholds:
+      small: 10  # <=10个文件变更
+      medium: 50 # <=50个文件变更
+      large: 100 # <=100个文件变更
+      xlarge: 101 # >100个文件变更
+
+  # 根据历史执行时间调整资源
+  history_based:
+    enabled: true
+    lookback_days: 30
+    adjustment_factor: 1.2 # 超过历史平均时间120%时升级资源
+
+  # 根据依赖复杂度调整资源
+  dependency_based:
+    enabled: true
+    thresholds:
+      small: 20   # <=20个依赖
+      medium: 100 # <=100个依赖
+      large: 500  # <=500个依赖
+      xlarge: 501 # >500个依赖
+
+# 并行度配置
+parallelism_config:
+  max_total_jobs: 20
+  per_task_limits:
+    unit-test: 5
+    integration-test: 3
+    e2e-test: 2
+  resource_quota:
+    max_cpu: 40
+    max_memory: 80GB
+
+# 资源回收策略
+resource_recycling:
+  idle_timeout: 5m
+  cleanup_interval: 10m
+  force_cleanup: 60m

@@ -1,0 +1,32 @@
+# 生产环境配置
+global:
+  log_level: "WARN"
+  timeout: 7200
+  retry_count: 5
+
+build:
+  default_build_dir: "."
+  default_output_dir: "dist"
+
+test:
+  default_test_type: "all"
+  coverage_enabled: true
+  coverage_threshold: 90
+
+deploy:
+  default_target: "kubernetes"
+  default_strategy: "blue-green"
+  default_replicas: 3
+  default_namespace: "production"
+
+rollback:
+  default_steps: 2
+  default_version: "previous"
+
+security:
+  secret_scan_enabled: true
+  dependency_scan_enabled: true
+
+monitoring:
+  benchmark_enabled: true
+  resource_monitoring_enabled: true

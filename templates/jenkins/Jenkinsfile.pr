@@ -1,0 +1,87 @@
+// PR流水线文件
+pipeline {
+    agent any
+    
+    environment {
+        APP_NAME = "${env.JOB_NAME.split('/').last()}"
+    }
+    
+    tools {
+        nodejs "NodeJS-18"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                cleanWs()
+                checkout scm
+            }
+        }
+        
+        stage('Code Quality') {
+            parallel {
+                stage('Format Check') {
+                    steps {
+                        sh 'npm run format:check'
+                    }
+                }
+                stage('Lint') {
+                    steps {
+                        sh 'npm run lint'
+                    }
+                }
+            }
+        }
+        
+        stage('Security Scan') {
+            agent {
+                docker {
+                    image 'aquasec/trivy:latest'
+                }
+            }
+            steps {
+                sh 'trivy fs --exit-code 1 --severity HIGH,CRITICAL .'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'npm ci'
+                sh 'npm run build'
+            }
+        }
+        
+        stage('Test') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        sh 'npm run test:unit -- --coverage'
+                    }
+                    post {
+                        always {
+                            junit 'test-results.xml'
+                        }
+                    }
+                }
+                
+                stage('Integration Tests') {
+                    steps {
+                        sh 'npm run test:integration'
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo "PR验证通过!"
+        }
+        failure {
+            echo "PR验证失败!"
+        }
+        cleanup {
+            cleanWs()
+        }
+    }
+}

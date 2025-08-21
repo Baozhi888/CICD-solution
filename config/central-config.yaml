@@ -1,0 +1,139 @@
+# CI/CD 中心化配置文件
+# 管理所有CI/CD相关的全局设置
+
+# 全局配置
+global:
+  # 日志级别 (DEBUG, INFO, WARN, ERROR)
+  log_level: "INFO"
+  
+  # 默认时区
+  timezone: "Asia/Shanghai"
+  
+  # 超时设置（秒）
+  timeout: 3600
+  
+  # 重试次数
+  retry_count: 3
+  
+  # 重试间隔（秒）
+  retry_interval: 5
+
+# 构建配置
+build:
+  # 默认构建目录
+  default_build_dir: "."
+  
+  # 默认输出目录
+  default_output_dir: "dist"
+  
+  # Node.js配置
+  node:
+    default_version: "18"
+    registry: "https://registry.npmjs.org/"
+  
+  # Python配置
+  python:
+    default_version: "3.9"
+    pip_index_url: "https://pypi.org/simple/"
+
+# 测试配置
+test:
+  # 默认测试类型
+  default_test_type: "all"
+  
+  # 是否生成测试覆盖率报告
+  coverage_enabled: false
+  
+  # 测试覆盖率阈值（百分比）
+  coverage_threshold: 80
+  
+  # 测试超时设置（秒）
+  timeout: 600
+
+# 部署配置
+deploy:
+  # 默认部署目标
+  default_target: "kubernetes"
+  
+  # 默认部署策略
+  default_strategy: "rolling"
+  
+  # 默认副本数量
+  default_replicas: 3
+  
+  # 默认命名空间
+  default_namespace: "default"
+  
+  # Kubernetes配置
+  kubernetes:
+    # kubectl命令路径
+    kubectl_path: "kubectl"
+    
+    # 默认上下文
+    default_context: ""
+  
+  # Docker配置
+  docker:
+    # Docker命令路径
+    docker_path: "docker"
+    
+    # Docker Compose命令路径
+    docker_compose_path: "docker-compose"
+
+# 回滚配置
+rollback:
+  # 默认回滚步数
+  default_steps: 1
+  
+  # 默认回滚版本
+  default_version: "previous"
+
+# 安全配置
+security:
+  # 是否启用密钥扫描
+  secret_scan_enabled: true
+  
+  # 密钥扫描工具路径
+  secret_scan_tool: "git-secrets"
+  
+  # 是否启用依赖扫描
+  dependency_scan_enabled: true
+  
+  # 依赖扫描工具路径
+  dependency_scan_tool: "snyk"
+
+# 监控配置
+monitoring:
+  # 是否启用性能基准测试
+  benchmark_enabled: true
+  
+  # 性能基准测试工具路径
+  benchmark_tool: "ab"
+  
+  # 是否启用资源监控
+  resource_monitoring_enabled: true
+  
+  # 资源监控工具路径
+  resource_monitoring_tool: "top"
+
+# 缓存配置
+cache:
+  # 是否启用缓存
+  enabled: true
+  
+  # 缓存目录
+  cache_dir: "/tmp/cicd-cache"
+  
+  # 缓存过期时间（小时）
+  expiration_hours: 24
+
+# 通知配置
+notification:
+  # 是否启用通知
+  enabled: false
+  
+  # 通知方式 (email, slack, webhook)
+  type: "email"
+  
+  # 通知接收者
+  recipients: []

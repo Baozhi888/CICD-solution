@@ -1,0 +1,307 @@
+# 基于指标的自动回滚策略配置
+
+## 概述
+此配置文件定义了自动化回滚的触发条件和策略。系统将根据这些指标阈值自动决定是否触发回滚。
+
+## 通用配置
+
+```yaml
+# 回滚策略全局配置
+rollback:
+  # 是否启用自动回滚
+  enabled: true
+  
+  # 检查间隔（秒）
+  check_interval: 30
+  
+  # 检查窗口（分钟）
+  check_window: 5
+  
+  # 触发回滚前的确认次数
+  # 需要连续N次超过阈值才触发回滚
+  confirmation_count: 3
+  
+  # 回滚后冷却时间（分钟）
+  # 在此期间内不执行新的回滚操作
+  cooldown_period: 10
+  
+  # 通知配置
+  notifications:
+    # 是否启用通知
+    enabled: true
+    
+    # 通知方式
+    channels:
+      - slack
+      - email
+      - webhook
+    
+    # Slack webhook URL
+    slack_webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    
+    # 邮件配置
+    email:
+      smtp_server: "smtp.yourcompany.com"
+      smtp_port: 587
+      username: "rollback-notifications@yourcompany.com"
+      password: "YOUR_EMAIL_PASSWORD"
+      recipients:
+        - "ops-team@yourcompany.com"
+        - "dev-team@yourcompany.com"
+    
+    # Webhook配置
+    webhook:
+      url: "https://your-monitoring-system.com/webhook/rollback"
+      method: "POST"
+      headers:
+        Content-Type: "application/json"
+        Authorization: "Bearer YOUR_WEBHOOK_TOKEN"
+
+## 蓝绿部署回滚策略
+
+blue_green_rollback:
+  # 健康检查配置
+  health_check:
+    # 部署就绪超时（秒）
+    deployment_timeout: 300
+    
+    # Pod就绪检查超时（秒）
+    pod_ready_timeout: 120
+    
+    # 服务端点就绪超时（秒）
+    endpoint_timeout: 60
+    
+    # 应用特定健康检查
+    app_health_check:
+      # 是否启用
+      enabled: true
+      
+      # 健康检查端点
+      endpoint: "/health"
+      
+      # 超时时间（秒）
+      timeout: 30
+      
+      # 重试次数
+      retries: 3
+      
+      # 重试间隔（秒）
+      retry_interval: 5
+  
+  # 流量切换验证
+  traffic_switch_validation:
+    # 验证超时（秒）
+    timeout: 60
+    
+    # 验证间隔（秒）
+    interval: 10
+    
+    # 验证次数
+    attempts: 5
+
+## 金丝雀部署回滚策略
+
+canary_rollback:
+  # 金丝雀副本数
+  replicas: 1
+  
+  # 流量比例阈值
+  # 当金丝雀流量超过此比例时启用更严格的监控
+  traffic_threshold: 10  # 10%
+  
+  # 指标阈值配置
+  thresholds:
+    # CPU使用率阈值（百分比）
+    cpu_usage: 80
+    
+    # 内存使用率阈值（百分比）
+    memory_usage: 80
+    
+    # 错误率阈值（百分比）
+    error_rate: 5
+    
+    # 延迟阈值（毫秒）
+    latency: 1000
+    
+    # HTTP 5xx错误率阈值（百分比）
+    http_5xx_rate: 2
+    
+    # 数据库错误率阈值（百分比）
+    database_error_rate: 3
+    
+    # 缓存错误率阈值（百分比）
+    cache_error_rate: 5
+  
+  # 滑动窗口配置
+  sliding_window:
+    # 窗口大小（分钟）
+    duration: 5
+    
+    # 检查间隔（秒）
+    interval: 30
+
+## 基于业务指标的回滚策略
+
+business_metrics_rollback:
+  # 是否启用业务指标监控
+  enabled: true
+  
+  # 业务指标配置
+  metrics:
+    # 订单量下降阈值（百分比）
+    - name: "order_volume"
+      threshold: -20  # 下降20%
+      weight: 30      # 权重30%
+    
+    # 用户活跃度下降阈值（百分比）
+    - name: "user_activity"
+      threshold: -15  # 下降15%
+      weight: 25      # 权重25%
+    
+    # 收入下降阈值（百分比）
+    - name: "revenue"
+      threshold: -10  # 下降10%
+      weight: 25      # 权重25%
+    
+    # 用户满意度下降阈值（百分比）
+    - name: "user_satisfaction"
+      threshold: -10  # 下降10%
+      weight: 20      # 权重20%
+  
+  # 综合评分阈值
+  # 当综合评分低于此值时触发回滚
+  composite_score_threshold: 70
+
+## 自定义指标回滚策略
+
+custom_metrics_rollback:
+  # 是否启用自定义指标监控
+  enabled: true
+  
+  # 自定义指标配置
+  metrics:
+    # 示例：自定义业务指标
+    - name: "custom_business_metric"
+      query: "sum(rate(custom_metric_total[5m]))"
+      threshold: 100
+      comparison: "less_than"  # less_than, greater_than, equal_to
+      datasource: "prometheus"
+    
+    # 示例：第三方服务可用性
+    - name: "third_party_service_availability"
+      query: "up{job='third-party-service'}"
+      threshold: 1
+      comparison: "less_than"
+      datasource: "prometheus"
+
+## 回滚执行配置
+
+rollback_execution:
+  # 回滚超时（秒）
+  timeout: 600
+  
+  # 回滚步骤重试配置
+  retry:
+    # 最大重试次数
+    max_attempts: 3
+    
+    # 重试间隔（秒）
+    interval: 30
+  
+  # 回滚前备份配置
+  backup:
+    # 是否启用备份
+    enabled: true
+    
+    # 备份类型
+    types:
+      - configuration  # 配置备份
+      - database       # 数据库备份（如果适用）
+      - logs           # 日志备份
+    
+    # 备份存储位置
+    storage:
+      type: "s3"
+      bucket: "rollback-backups-yourcompany"
+      region: "us-west-2"
+  
+  # 回滚后验证配置
+  validation:
+    # 是否启用回滚后验证
+    enabled: true
+    
+    # 验证超时（秒）
+    timeout: 300
+    
+    # 验证间隔（秒）
+    interval: 30
+    
+    # 验证次数
+    attempts: 5
+
+## 环境特定配置
+
+environments:
+  # 生产环境配置
+  production:
+    # 更严格的阈值
+    thresholds_multiplier: 1.0
+    
+    # 启用所有通知渠道
+    notifications_enabled: true
+    
+    # 更短的检查间隔
+    check_interval: 15
+    
+    # 更长的确认次数
+    confirmation_count: 5
+  
+  # 预发布环境配置
+  staging:
+    # 稍微宽松的阈值
+    thresholds_multiplier: 1.2
+    
+    # 仅启用部分通知渠道
+    notifications_enabled: true
+    notification_channels:
+      - slack
+      - email
+  
+  # 开发环境配置
+  development:
+    # 宽松的阈值
+    thresholds_multiplier: 2.0
+    
+    # 禁用通知
+    notifications_enabled: false
+    
+    # 更长的检查间隔
+    check_interval: 60
+
+## 集成配置
+
+integrations:
+  # Prometheus集成
+  prometheus:
+    enabled: true
+    url: "http://prometheus.monitoring:9090"
+    timeout: 30
+    
+    # 查询配置
+    queries:
+      cpu_usage: "rate(container_cpu_usage_seconds_total{container!='POD',container!=''}[5m])"
+      memory_usage: "container_memory_usage_bytes{container!='POD',container!=''}"
+      error_rate: "rate(http_requests_total{code=~'5..'}[5m])"
+      latency: "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))"
+  
+  # Datadog集成
+  datadog:
+    enabled: false
+    api_key: "YOUR_DATADOG_API_KEY"
+    app_key: "YOUR_DATADOG_APP_KEY"
+    
+  # New Relic集成
+  newrelic:
+    enabled: false
+    api_key: "YOUR_NEWRELIC_API_KEY"
+    account_id: "YOUR_NEWRELIC_ACCOUNT_ID"
