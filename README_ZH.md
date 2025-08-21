@@ -116,6 +116,28 @@ ci_cd:
 ./tests/run-tests.sh --verbose
 ```
 
+### 4. 使用 aicd 命令行工具
+
+```bash
+# 显示帮助
+./scripts/aicd.sh --help
+
+# 初始化项目
+./scripts/aicd.sh init
+
+# 验证配置
+./scripts/aicd.sh validate
+
+# 运行构建
+./scripts/aicd.sh build
+
+# 运行测试
+./scripts/aicd.sh test
+
+# 部署项目
+./scripts/aicd.sh deploy
+```
+
 ### 4. 集成到 CI/CD
 
 #### GitHub Actions

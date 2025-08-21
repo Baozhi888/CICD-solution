@@ -30,10 +30,10 @@ val_log_error() {
 }
 
 # 默认参数
-VAL_CONFIG_FILE="/root/idear/cicd-solution/config/central-config.yaml"
-VAL_SCHEMA_FILE="/root/idear/cicd-solution/config/config-schema.json"
+VAL_CONFIG_FILE="$(dirname "$(dirname "$0"))/config/central-config.yaml"
+VAL_SCHEMA_FILE="$(dirname "$(dirname "$0"))/config/config-schema.json"
 VAL_STRICT_MODE=false
-VAL_ENV_CONFIG_DIR="/root/idear/cicd-solution/config/environment"
+VAL_ENV_CONFIG_DIR="$(dirname "$(dirname "$0"))/config/environment"
 
 # 显示帮助信息
 show_help() {

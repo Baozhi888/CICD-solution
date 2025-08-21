@@ -31,9 +31,9 @@ cfg_log_error() {
 }
 
 # 默认配置文件路径
-CFG_DEFAULT_CONFIG_FILE="/root/idear/cicd-solution/config/central-config.yaml"
+CFG_DEFAULT_CONFIG_FILE="$(dirname "$(dirname "$(dirname "$0")")")/config/central-config.yaml"
 CFG_LOCAL_CONFIG_FILE="./config.yaml"
-CFG_ENV_CONFIG_DIR="/root/idear/cicd-solution/config/environment"
+CFG_ENV_CONFIG_DIR="$(dirname "$(dirname "$(dirname "$0")")")/config/environment"
 
 # 加载YAML配置文件
 # 注意：此函数需要yq工具支持

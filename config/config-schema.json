@@ -1,215 +1,336 @@
-# CI/CD 配置模式定义
-# 用于验证配置文件结构和数据类型
-
 {
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "title": "CICD Solution Configuration Schema",
+  "description": "Configuration schema for the CICD Solution framework",
+  "required": [
+    "global",
+    "build",
+    "test",
+    "deploy",
+    "rollback",
+    "security",
+    "monitoring",
+    "cache",
+    "notification"
+  ],
   "properties": {
     "global": {
       "type": "object",
+      "title": "Global Configuration",
+      "description": "Global settings for the CI/CD framework",
+      "required": [
+        "log_level",
+        "timezone",
+        "timeout",
+        "retry_count",
+        "retry_interval"
+      ],
       "properties": {
         "log_level": {
           "type": "string",
-          "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
+          "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
+          "description": "Logging level"
         },
         "timezone": {
-          "type": "string"
+          "type": "string",
+          "description": "Default timezone",
+          "default": "Asia/Shanghai"
         },
         "timeout": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "description": "Global timeout setting in seconds"
         },
         "retry_count": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Number of retries"
         },
         "retry_interval": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Retry interval in seconds"
         }
-      },
-      "required": ["log_level", "timezone", "timeout", "retry_count", "retry_interval"]
+      }
     },
     "build": {
       "type": "object",
+      "title": "Build Configuration",
+      "description": "Build-related settings",
+      "required": [
+        "default_build_dir",
+        "default_output_dir",
+        "node",
+        "python"
+      ],
       "properties": {
         "default_build_dir": {
-          "type": "string"
+          "type": "string",
+          "description": "Default build directory"
         },
         "default_output_dir": {
-          "type": "string"
+          "type": "string",
+          "description": "Default output directory"
         },
         "node": {
           "type": "object",
+          "required": ["default_version", "registry"],
           "properties": {
             "default_version": {
-              "type": "string"
+              "type": "string",
+              "description": "Default Node.js version"
             },
             "registry": {
               "type": "string",
-              "format": "uri"
+              "format": "uri",
+              "description": "NPM registry URL"
             }
           }
         },
         "python": {
           "type": "object",
+          "required": ["default_version", "pip_index_url"],
           "properties": {
             "default_version": {
-              "type": "string"
+              "type": "string",
+              "description": "Default Python version"
             },
             "pip_index_url": {
               "type": "string",
-              "format": "uri"
+              "format": "uri",
+              "description": "PyPI index URL"
             }
           }
         }
-      },
-      "required": ["default_build_dir", "default_output_dir"]
+      }
     },
     "test": {
       "type": "object",
+      "title": "Test Configuration",
+      "description": "Test-related settings",
+      "required": [
+        "default_test_type",
+        "coverage_enabled",
+        "coverage_threshold",
+        "timeout"
+      ],
       "properties": {
         "default_test_type": {
           "type": "string",
-          "enum": ["unit", "integration", "e2e", "all"]
+          "enum": ["unit", "integration", "e2e", "all"],
+          "description": "Default test type"
         },
         "coverage_enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to generate test coverage reports"
         },
         "coverage_threshold": {
           "type": "integer",
           "minimum": 0,
-          "maximum": 100
+          "maximum": 100,
+          "description": "Test coverage threshold percentage"
         },
         "timeout": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "description": "Test timeout in seconds"
         }
-      },
-      "required": ["default_test_type", "coverage_enabled", "coverage_threshold", "timeout"]
+      }
     },
     "deploy": {
       "type": "object",
+      "title": "Deployment Configuration",
+      "description": "Deployment-related settings",
+      "required": [
+        "default_target",
+        "default_strategy",
+        "default_replicas",
+        "default_namespace",
+        "kubernetes",
+        "docker"
+      ],
       "properties": {
         "default_target": {
           "type": "string",
-          "enum": ["kubernetes", "docker-compose", "ssh"]
+          "enum": ["kubernetes", "docker", "docker-compose"],
+          "description": "Default deployment target"
         },
         "default_strategy": {
           "type": "string",
-          "enum": ["rolling", "blue-green", "canary"]
+          "enum": ["rolling", "blue-green", "canary"],
+          "description": "Default deployment strategy"
         },
         "default_replicas": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "description": "Default number of replicas"
         },
         "default_namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "Default Kubernetes namespace"
         },
         "kubernetes": {
           "type": "object",
+          "required": ["kubectl_path", "default_context"],
           "properties": {
             "kubectl_path": {
-              "type": "string"
+              "type": "string",
+              "description": "Path to kubectl command"
             },
             "default_context": {
-              "type": "string"
+              "type": "string",
+              "description": "Default Kubernetes context"
             }
           }
         },
         "docker": {
           "type": "object",
+          "required": ["docker_path", "docker_compose_path"],
           "properties": {
             "docker_path": {
-              "type": "string"
+              "type": "string",
+              "description": "Path to docker command"
             },
             "docker_compose_path": {
-              "type": "string"
+              "type": "string",
+              "description": "Path to docker-compose command"
             }
           }
         }
-      },
-      "required": ["default_target", "default_strategy", "default_replicas", "default_namespace"]
+      }
     },
     "rollback": {
       "type": "object",
+      "title": "Rollback Configuration",
+      "description": "Rollback-related settings",
+      "required": [
+        "default_steps",
+        "default_version"
+      ],
       "properties": {
         "default_steps": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "description": "Default number of rollback steps"
         },
         "default_version": {
-          "type": "string"
+          "type": "string",
+          "enum": ["previous", "specific"],
+          "description": "Default rollback version"
         }
-      },
-      "required": ["default_steps", "default_version"]
+      }
     },
     "security": {
       "type": "object",
+      "title": "Security Configuration",
+      "description": "Security-related settings",
+      "required": [
+        "secret_scan_enabled",
+        "secret_scan_tool",
+        "dependency_scan_enabled",
+        "dependency_scan_tool"
+      ],
       "properties": {
         "secret_scan_enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to enable secret scanning"
         },
         "secret_scan_tool": {
-          "type": "string"
+          "type": "string",
+          "description": "Secret scanning tool path"
         },
         "dependency_scan_enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to enable dependency scanning"
         },
         "dependency_scan_tool": {
-          "type": "string"
+          "type": "string",
+          "description": "Dependency scanning tool path"
         }
       }
     },
     "monitoring": {
       "type": "object",
+      "title": "Monitoring Configuration",
+      "description": "Monitoring-related settings",
+      "required": [
+        "benchmark_enabled",
+        "benchmark_tool",
+        "resource_monitoring_enabled",
+        "resource_monitoring_tool"
+      ],
       "properties": {
         "benchmark_enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to enable performance benchmarking"
         },
         "benchmark_tool": {
-          "type": "string"
+          "type": "string",
+          "description": "Performance benchmarking tool path"
         },
         "resource_monitoring_enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to enable resource monitoring"
         },
         "resource_monitoring_tool": {
-          "type": "string"
+          "type": "string",
+          "description": "Resource monitoring tool path"
         }
       }
     },
     "cache": {
       "type": "object",
+      "title": "Cache Configuration",
+      "description": "Cache-related settings",
+      "required": [
+        "enabled",
+        "cache_dir",
+        "expiration_hours"
+      ],
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to enable caching"
         },
         "cache_dir": {
-          "type": "string"
+          "type": "string",
+          "description": "Cache directory path"
         },
         "expiration_hours": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 0,
+          "description": "Cache expiration time in hours"
         }
       }
     },
     "notification": {
       "type": "object",
+      "title": "Notification Configuration",
+      "description": "Notification-related settings",
+      "required": [
+        "enabled",
+        "type",
+        "recipients"
+      ],
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether to enable notifications"
         },
         "type": {
           "type": "string",
-          "enum": ["email", "slack", "webhook"]
+          "enum": ["email", "slack", "webhook"],
+          "description": "Notification method"
         },
         "recipients": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "Notification recipients"
         }
       }
     }
-  },
-  "required": ["global", "build", "test", "deploy", "rollback"]
+  }
 }

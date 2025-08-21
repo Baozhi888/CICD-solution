@@ -29,4 +29,6 @@ if command -v init_config_versioning >/dev/null 2>&1; then
 fi
 
 # 设置默认日志模块
-set_log_module "CI/CD-Core"
+if command -v set_log_module >/dev/null 2>&1; then
+    set_log_module "CI/CD-Core"
+fi
