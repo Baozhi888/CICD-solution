@@ -76,24 +76,23 @@
 在CI/CD流程中引用脚本的方式：
 
 ```bash
-source /root/idear/cicd-solution/shared-scripts/logging.sh
-source /root/idear/cicd-solution/shared-scripts/utils.sh
-source /root/idear/cicd-solution/shared-scripts/config-manager.sh
+source /root/idear/cicd-solution/lib/core-loader.sh
 ```
 
 ### 脚本使用示例
 
 ```bash
 # 初始化配置管理器
-source /root/idear/cicd-solution/shared-scripts/config-manager.sh
-init_config_manager
+source /root/idear/cicd-solution/lib/core-loader.sh
+# 配置管理器已自动初始化
 
 # 使用配置值
 build_dir=$(get_config "build.default_build_dir" ".")
 output_dir=$(get_config "build.default_output_dir" "dist")
 
 # 使用日志功能
-source /root/idear/cicd-solution/shared-scripts/logging.sh
+source /root/idear/cicd-solution/lib/core-loader.sh
+set_log_module "MyApp"
 log_info "开始构建过程"
 log_debug "构建目录: $build_dir"
 ```

@@ -138,3 +138,40 @@ check_disk_space() {
         return 0
     fi
 }
+
+# 字符串处理函数
+trim() {
+    local var="$*"
+    # 删除前导空格
+    var="${var#"${var%%[![:space:]]*}"}"
+    # 删除尾随空格
+    var="${var%"${var##*[![:space:]]}"}"
+    echo -n "$var"
+}
+
+to_lower() {
+    echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+to_upper() {
+    echo "$1" | tr '[:lower:]' '[:upper:]'
+}
+
+# 检查字符串是否为空
+is_empty() {
+    [ -z "$1" ]
+}
+
+# 检查字符串是否非空
+is_not_empty() {
+    [ -n "$1" ]
+}
+
+# 错误处理函数（简化版）
+handle_error() {
+    local error_msg="$1"
+    local log_file="${2:-/tmp/cicd-errors.log}"
+    
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $error_msg" >> "$log_file"
+    echo "ERROR: $error_msg" >&2
+}

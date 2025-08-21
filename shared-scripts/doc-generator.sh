@@ -300,8 +300,8 @@ generate_developer_guide() {
 在CI/CD流程中引用脚本的方式：
 
 ```bash
-source /path/to/shared-scripts/logging.sh
-source /path/to/shared-scripts/utils.sh
+source /path/to/lib/core-loader.sh
+set_log_module "DocGenerator"
 ```
 
 ## 模板使用

@@ -350,8 +350,8 @@ generate_user_manual() {
 
 在CI/CD流程中引用脚本：
 ```bash
-source ./shared-scripts/logging.sh
-source ./shared-scripts/utils.sh
+source ./lib/core-loader.sh
+set_log_module "DocGenerator"
 ```
 
 ## 模板使用
