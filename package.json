@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/cicd-solution.git"
+    "url": "git+https://github.com/Baozhi888/CICD-solution.git"
   },
   "keywords": [
     "ci-cd",
@@ -31,9 +31,9 @@
   "author": "KingJohn <kj331704@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/your-username/cicd-solution/issues"
+    "url": "https://github.com/Baozhi888/CICD-solution/issues"
   },
-  "homepage": "https://github.com/your-username/cicd-solution#readme",
+  "homepage": "https://github.com/Baozhi888/CICD-solution#readme",
   "devDependencies": {
     "shellcheck": "^2.0.0"
   },

@@ -8,7 +8,7 @@
 
 如果您发现了 bug 或有功能建议，请：
 
-1. 先检查 [Issues](https://github.com/your-username/cicd-solution/issues) 确保问题未被报告
+1. 先检查 [Issues](https://github.com/Baozhi888/CICD-solution/issues) 确保问题未被报告
 2. 创建新 Issue，使用适当的模板：
    - 🐛 Bug 报告
    - ✨ 功能请求
@@ -21,11 +21,11 @@
 
 ```bash
 # 1. Fork 并克隆项目
-git clone https://github.com/your-username/cicd-solution.git
+git clone https://github.com/Baozhi888/CICD-solution.git
 cd cicd-solution
 
 # 2. 添加上游仓库
-git remote add upstream https://github.com/original-username/cicd-solution.git
+git remote add upstream https://github.com/Baozhi888/cicd-solution.git
 
 # 3. 创建功能分支
 git checkout -b feature/your-feature-name
