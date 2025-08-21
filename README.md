@@ -3,6 +3,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-blue.svg)](https://www.gnu.org/software/bash/)
 [![BMad-Method](https://img.shields.io/badge/Powered%20By-BMad--Method-green.svg)](https://github.com/bmad-code-org/BMAD-METHOD)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Baozhi888/CICD-solution)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://docker.com)
 
 A lightweight, modular CI/CD automation solution built with Bash scripts, integrated with BMad-Method agile development framework. Designed for small to medium teams and individual developers.
 
@@ -36,6 +39,9 @@ cd CICD-solution
 
 # View documentation | 查看文档
 ls README_*.md
+
+# Use the aicd CLI | 使用 aicd 命令行工具
+./scripts/aicd.sh --help
 ```
 
 ## ✨ Key Features | 核心特性

@@ -116,6 +116,28 @@ ci_cd:
 ./tests/run-tests.sh --verbose
 ```
 
+### 4. Use the aicd CLI
+
+```bash
+# Show help
+./scripts/aicd.sh --help
+
+# Initialize project
+./scripts/aicd.sh init
+
+# Validate configuration
+./scripts/aicd.sh validate
+
+# Run build
+./scripts/aicd.sh build
+
+# Run tests
+./scripts/aicd.sh test
+
+# Deploy
+./scripts/aicd.sh deploy
+```
+
 ### 4. Integrate with CI/CD
 
 #### GitHub Actions
