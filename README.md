@@ -27,6 +27,14 @@ Please select your preferred language:
 - Detailed configuration instructions and examples
 - Suitable for English-speaking users
 
+## 📖 Documentation | 文档
+
+- **[User Guide | 使用指南](docs/user-guide.md)** - Complete user guide with step-by-step instructions
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - For contributors and developers
+- **[Architecture Patterns](docs/architecture-patterns.md)** - Design patterns and best practices
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Migrate from other CI/CD systems
+- **[Security Best Practices](docs/security-best-practices.md)** - Security guidelines and recommendations
+
 ## 🚀 Quick Start | 快速开始
 
 ```bash
