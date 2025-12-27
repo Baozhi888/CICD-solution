@@ -5,6 +5,29 @@
 
 set -euo pipefail
 
+# 安全删除函数：使用 shred 彻底清除敏感文件
+# shred 会多次覆写文件内容，防止数据恢复
+secure_delete() {
+  local target="$1"
+
+  if [[ -d "$target" ]]; then
+    # 递归安全删除目录中的所有文件
+    find "$target" -type f -exec shred -vfz -n 3 {} \; 2>/dev/null || true
+    rm -rf "$target"
+  elif [[ -f "$target" ]]; then
+    # 安全删除单个文件
+    shred -vfz -n 3 "$target" 2>/dev/null || rm -f "$target"
+  fi
+}
+
+# 清理环境变量中的敏感信息
+secure_unset_vars() {
+  local vars=("DB_PASSWORD" "DB_USERNAME" "API_KEY" "VAULT_TOKEN" "APP_ENV_FILE")
+  for var in "${vars[@]}"; do
+    unset "$var" 2>/dev/null || true
+  done
+}
+
 # Function to validate secret requirements
 validate_secret_requirements() {
   echo "Validating secret requirements..."
@@ -29,8 +52,8 @@ secure_secret_handling() {
   local temp_dir=$(mktemp -d)
   chmod 700 "$temp_dir"
   
-  # Ensure cleanup on exit
-  trap 'rm -rf "$temp_dir"' EXIT
+  # Ensure cleanup on exit (使用安全删除)
+  trap 'secure_delete "$temp_dir"; secure_unset_vars' EXIT
   
   # Retrieve secrets using Vault agent (assuming Vault agent sidecar)
   if [[ -f "/vault/secrets/db-password" ]]; then
@@ -126,19 +149,31 @@ EOF
 # Main execution
 main() {
   echo "Starting secure secret management process..."
-  
+
+  # 设置最终清理 trap
+  trap 'secure_unset_vars; [[ -n "${APP_ENV_FILE:-}" ]] && secure_delete "$APP_ENV_FILE"' EXIT
+
   # Validate requirements
   validate_secret_requirements
-  
+
   # Handle secrets securely
   secure_secret_handling
-  
+
   # Inject secrets securely
   secure_secret_injection
-  
+
   # Deploy securely to Kubernetes
   secure_k8s_deployment
-  
+
+  # 主动清理环境文件
+  if [[ -n "${APP_ENV_FILE:-}" ]] && [[ -f "$APP_ENV_FILE" ]]; then
+    echo "Cleaning up sensitive environment file..."
+    secure_delete "$APP_ENV_FILE"
+  fi
+
+  # 清理环境变量
+  secure_unset_vars
+
   echo "Secure secret management process completed successfully"
 }
 

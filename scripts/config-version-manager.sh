@@ -3,6 +3,8 @@
 # 配置版本管理工具
 # 管理配置文件的版本控制、迁移和回滚
 
+set -euo pipefail
+
 # 加载核心库
 source "$(dirname "$0")/../lib/core-loader.sh"
 

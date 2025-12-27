@@ -3,30 +3,29 @@
 # 配置验证脚本
 # 用于在CI/CD流程执行前检查配置的正确性
 
-# 颜色定义
-VAL_RED='\033[0;31m'
-VAL_GREEN='\033[0;32m'
-VAL_YELLOW='\033[1;33m'
-VAL_BLUE='\033[0;34m'
-VAL_NC='\033[0m' # No Color
+set -euo pipefail
 
-# 日志函数
+# 加载统一颜色库
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/utils/colors.sh"
+
+# 日志函数（使用统一颜色库）
 val_log_debug() {
     if [ "${VAL_LOG_LEVEL:-INFO}" = "DEBUG" ]; then
-        echo -e "${VAL_BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE DEBUG]${VAL_NC} $1" >&2
+        echo -e "${COLOR_BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE DEBUG]${COLOR_NC} $1" >&2
     fi
 }
 
 val_log_info() {
-    echo -e "${VAL_GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE INFO]${VAL_NC} $1" >&2
+    echo -e "${COLOR_GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE INFO]${COLOR_NC} $1" >&2
 }
 
 val_log_warn() {
-    echo -e "${VAL_YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE WARN]${VAL_NC} $1" >&2
+    echo -e "${COLOR_YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE WARN]${COLOR_NC} $1" >&2
 }
 
 val_log_error() {
-    echo -e "${VAL_RED}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE ERROR]${VAL_NC} $1" >&2
+    echo -e "${COLOR_RED}[$(date +'%Y-%m-%d %H:%M:%S')] [VALIDATE ERROR]${COLOR_NC} $1" >&2
 }
 
 # 默认参数

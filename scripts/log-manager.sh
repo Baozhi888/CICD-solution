@@ -3,6 +3,8 @@
 # 日志管理工具
 # 提供日志查询、统计、清理等功能
 
+set -euo pipefail
+
 # 加载核心库
 source "$(dirname "$0")/../lib/core-loader.sh"
 

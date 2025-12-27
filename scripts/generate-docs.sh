@@ -3,30 +3,29 @@
 # 文档自动化生成脚本
 # 根据配置文件和脚本自动生成相关文档
 
-# 颜色定义
-GEN_RED='\033[0;31m'
-GEN_GREEN='\033[0;32m'
-GEN_YELLOW='\033[1;33m'
-GEN_BLUE='\033[0;34m'
-GEN_NC='\033[0m' # No Color
+set -euo pipefail
 
-# 日志函数
+# 加载统一颜色库
+GEN_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$GEN_SCRIPT_DIR/../lib/utils/colors.sh"
+
+# 日志函数（使用统一颜色库）
 gen_log_debug() {
     if [ "${GEN_LOG_LEVEL:-INFO}" = "DEBUG" ]; then
-        echo -e "${GEN_BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE DEBUG]${GEN_NC} $1" >&2
+        echo -e "${COLOR_BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE DEBUG]${COLOR_NC} $1" >&2
     fi
 }
 
 gen_log_info() {
-    echo -e "${GEN_GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE INFO]${GEN_NC} $1" >&2
+    echo -e "${COLOR_GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE INFO]${COLOR_NC} $1" >&2
 }
 
 gen_log_warn() {
-    echo -e "${GEN_YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE WARN]${GEN_NC} $1" >&2
+    echo -e "${COLOR_YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE WARN]${COLOR_NC} $1" >&2
 }
 
 gen_log_error() {
-    echo -e "${GEN_RED}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE ERROR]${GEN_NC} $1" >&2
+    echo -e "${COLOR_RED}[$(date +'%Y-%m-%d %H:%M:%S')] [GENERATE ERROR]${COLOR_NC} $1" >&2
 }
 
 # 默认参数

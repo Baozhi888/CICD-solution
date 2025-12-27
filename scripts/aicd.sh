@@ -3,6 +3,30 @@
 # aicd - AI-Enhanced CI/CD Command Line Interface
 # 统一 CI/CD 自动化解决方案的命令行入口
 
+set -euo pipefail
+
+# 安全执行命令函数（替代危险的 eval）
+# 使用 bash -c 在子进程中执行，避免直接 eval 带来的注入风险
+safe_exec_cmd() {
+    local cmd="$1"
+
+    # 验证命令不为空
+    if [[ -z "$cmd" ]]; then
+        return 1
+    fi
+
+    # 检查命令是否包含危险字符组合
+    # 阻止命令替换、进程替换等高风险操作
+    if [[ "$cmd" =~ \$\(|\`|<\(|>\( ]]; then
+        log_error "检测到不安全的命令模式: $cmd"
+        log_error "禁止在配置文件中使用命令替换"
+        return 1
+    fi
+
+    # 使用 bash -c 在隔离的子 shell 中执行
+    bash -c "$cmd"
+}
+
 # 加载核心库
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib/core-loader.sh"
@@ -402,10 +426,11 @@ cmd_build() {
         build_commands=("npm install" "npm run build")
     fi
     
-    # 执行构建命令
+    # 执行构建命令（使用安全执行函数替代 eval）
     while IFS= read -r cmd; do
+        [[ -z "$cmd" ]] && continue
         log_info "执行: $cmd"
-        if ! eval "$cmd"; then
+        if ! safe_exec_cmd "$cmd"; then
             log_error "构建失败: $cmd"
             return 1
         fi
@@ -438,10 +463,11 @@ cmd_deploy() {
         deploy_commands=("./scripts/deploy.sh")
     fi
     
-    # 执行部署命令
+    # 执行部署命令（使用安全执行函数替代 eval）
     while IFS= read -r cmd; do
+        [[ -z "$cmd" ]] && continue
         log_info "执行: $cmd"
-        if ! eval "$cmd"; then
+        if ! safe_exec_cmd "$cmd"; then
             log_error "部署失败: $cmd"
             # 检查是否启用自动回滚
             local auto_rollback
