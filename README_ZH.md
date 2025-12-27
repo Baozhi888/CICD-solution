@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-blue.svg)](https://www.gnu.org/software/bash/)
+[![ShellCheck](https://img.shields.io/badge/ShellCheck-Passed-brightgreen.svg)](https://www.shellcheck.net/)
 [![BMad-Method](https://img.shields.io/badge/Powered%20By-BMad--Method-green.svg)](https://github.com/bmad-code-org/BMAD-METHOD)
 [![中文文档](https://img.shields.io/badge/文档-中文-blue.svg)](README.md)
 
@@ -24,48 +25,79 @@
 ### 🧪 **完整测试**
 - **单元测试**：内置 Shell 脚本测试框架
 - **集成测试**：端到端流程验证
-- **测试报告**：详细的测试结果和覆盖率
+- **覆盖率检测**：自动生成测试覆盖率报告
 
-### 🔄 **智能功能**
-- **日志轮转**：自动清理和归档日志
-- **版本管理**：配置变更追踪和回滚
-- **错误处理**：统一的错误报告机制
+### 🔒 **安全加固**
+- **命令注入防护**：安全的命令执行机制
+- **敏感数据清理**：安全删除和变量清理
+- **代码质量检查**：集成 ShellCheck 静态分析
 
-### 🤖 **AI 增强**
-- **BMad-Method**：AI 驱动的敏捷开发框架
-- **智能代理**：自动化任务执行和代码生成
-- **协作流程**：多角色 AI 代理协作
+### 🛠️ **丰富工具**
+- **配置向导**：交互式配置生成
+- **API 文档生成**：自动提取函数文档
+- **配置合并**：YAML 深度合并工具
+
+### 📦 **企业级模板**
+- **GitHub Actions**：完整 CI/CD 流水线模板
+- **Docker/Kubernetes**：生产级部署配置
+- **Terraform**：AWS 基础设施即代码
 
 ## 📁 项目结构
 
 ```
 cicd-solution/
-├── lib/                    # 核心库
-│   └── core/              # 核心模块
-│       ├── utils.sh       # 工具函数
-│       ├── validation.sh  # 验证函数
-│       ├── logging.sh     # 日志管理
-│       ├── config-manager.sh  # 配置管理
-│       ├── error-handler.sh   # 错误处理
-│       └── enhanced-logging.sh # 增强日志
-├── scripts/               # 可执行脚本
-│   ├── log-manager.sh     # 日志管理器
+├── lib/                       # 核心库
+│   ├── core/                  # 核心模块
+│   │   ├── utils.sh           # 工具函数
+│   │   ├── validation.sh      # 验证函数
+│   │   ├── logging.sh         # 日志管理
+│   │   ├── config-manager.sh  # 配置管理
+│   │   ├── error-handler.sh   # 错误处理
+│   │   └── enhanced-logging.sh # 增强日志
+│   ├── utils/                 # 工具库
+│   │   ├── colors.sh          # 统一颜色定义
+│   │   └── args-parser.sh     # 参数解析器
+│   └── core-loader.sh         # 库加载器
+├── scripts/                   # 可执行脚本
+│   ├── aicd.sh                # 主命令行工具
+│   ├── config-wizard.sh       # 交互式配置向导
+│   ├── api-docs-generator.sh  # API 文档生成器
+│   ├── config-merger.sh       # 配置合并工具
+│   ├── lint.sh                # 代码质量检查
+│   ├── log-manager.sh         # 日志管理器
 │   ├── config-version-manager.sh  # 配置版本管理
-│   └── generate-docs.sh   # 文档生成器
-├── tests/                 # 测试框架
-│   ├── test-framework.sh  # 测试框架
-│   ├── run-tests.sh       # 测试运行器
-│   └── unit/              # 单元测试
-├── templates/             # CI/CD 模板
-│   ├── github/           # GitHub Actions
-│   ├── gitlab/           # GitLab CI
-│   └── jenkins/          # Jenkins
-├── config/               # 配置文件
-│   ├── central-config.yaml  # 中央配置
-│   └── environment/      # 环境配置
-├── docs/                 # 文档
-├── examples/             # 示例项目
-└── .bmad-core/           # BMad-Method 集成
+│   ├── validate-config.sh     # 配置验证
+│   └── generate-docs.sh       # 文档生成器
+├── tests/                     # 测试框架
+│   ├── run-tests.sh           # 测试运行器
+│   ├── coverage.sh            # 覆盖率检测
+│   ├── unit/                  # 单元测试
+│   │   ├── test-core.sh       # 核心库测试
+│   │   ├── test-aicd.sh       # 主程序测试
+│   │   └── test-utils-colors.sh # 颜色库测试
+│   └── integration/           # 集成测试
+│       └── test-workflow-integration.sh
+├── templates/                 # CI/CD 模板
+│   ├── github-actions/        # GitHub Actions 工作流
+│   │   ├── ci-cd.yaml         # 完整 CI/CD 流水线
+│   │   ├── pr-validation.yaml # PR 验证
+│   │   └── release.yaml       # 发布流程
+│   ├── docker/                # Docker 配置
+│   │   ├── Dockerfile.node    # Node.js 多阶段构建
+│   │   ├── Dockerfile.python  # Python 多阶段构建
+│   │   ├── docker-compose.dev.yaml   # 开发环境
+│   │   └── docker-compose.prod.yaml  # 生产环境
+│   ├── kubernetes/            # Kubernetes 配置
+│   │   ├── deployment.yaml    # 部署配置
+│   │   └── ingress.yaml       # Ingress 配置
+│   └── terraform/             # Terraform IaC
+│       ├── main.tf            # AWS 基础设施
+│       └── env/               # 环境变量
+├── config/                    # 配置文件
+│   ├── central-config.yaml    # 中央配置
+│   └── environment/           # 环境配置
+├── docs/                      # 文档
+└── .shellcheckrc              # ShellCheck 配置
 ```
 
 ## 🚀 快速开始
@@ -77,30 +109,17 @@ git clone https://github.com/Baozhi888/CICD-solution.git
 cd CICD-solution
 ```
 
-### 2. 配置项目
+### 2. 使用配置向导（推荐）
 
-编辑 `config/central-config.yaml`：
+```bash
+# 启动交互式配置向导
+./scripts/config-wizard.sh
 
-```yaml
-# 基础配置
-project:
-  name: "my-project"
-  version: "1.0.0"
+# 或使用快速模式
+./scripts/config-wizard.sh --quick
 
-# 环境配置
-environments:
-  development:
-    debug: true
-    log_level: "DEBUG"
-  production:
-    debug: false
-    log_level: "INFO"
-
-# CI/CD 配置
-ci_cd:
-  build_command: "npm run build"
-  test_command: "npm test"
-  deploy_command: "./scripts/deploy.sh"
+# 或选择预设模板
+./scripts/config-wizard.sh --template
 ```
 
 ### 3. 运行测试
@@ -109,11 +128,14 @@ ci_cd:
 # 运行所有测试
 ./tests/run-tests.sh
 
-# 运行特定测试
+# 只运行单元测试
 ./tests/run-tests.sh --unit-only
 
-# 详细输出
-./tests/run-tests.sh --verbose
+# 生成覆盖率报告
+./tests/run-tests.sh --coverage
+
+# 查看详细覆盖率
+./tests/coverage.sh --detail
 ```
 
 ### 4. 使用 aicd 命令行工具
@@ -138,62 +160,122 @@ ci_cd:
 ./scripts/aicd.sh deploy
 ```
 
-### 4. 集成到 CI/CD
+## 🛠️ 工具使用
 
-#### GitHub Actions
+### 配置向导
 
-```yaml
-name: CI/CD Pipeline
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Tests
-        run: ./tests/run-tests.sh
-```
-
-## 📖 使用指南
-
-### 核心脚本
-
-#### 日志管理
-```bash
-# 启动日志管理器
-./scripts/log-manager.sh start
-
-# 查看日志状态
-./scripts/log-manager.sh status
-
-# 清理旧日志
-./scripts/log-manager.sh cleanup
-```
-
-#### 配置版本管理
-```bash
-# 创建配置版本
-./scripts/config-version-manager.sh create "Add new feature"
-
-# 查看版本历史
-./scripts/config-version-manager.sh history
-
-# 回滚到指定版本
-./scripts/config-version-manager.sh rollback v1.0.0
-```
-
-### 使用共享库
+交互式生成项目配置文件：
 
 ```bash
-# 加载核心库
-source ./lib/core-loader.sh
+# 完整向导模式
+./scripts/config-wizard.sh
 
-# 使用工具函数
-trim_string=$(trim "  hello world  ")
-is_valid=$(is_email "test@example.com")
-log_info "This is an info message"
+# 选择项目模板
+./scripts/config-wizard.sh --template
+# 支持: node-webapp, node-api, python-api, go-service, java-spring
+```
+
+### API 文档生成
+
+从 Shell 脚本自动提取函数文档：
+
+```bash
+# 生成 Markdown 文档
+./scripts/api-docs-generator.sh
+
+# 生成 HTML 文档
+./scripts/api-docs-generator.sh --format html
+
+# 包含私有函数
+./scripts/api-docs-generator.sh --private
+```
+
+### 配置合并
+
+深度合并多个 YAML 配置文件：
+
+```bash
+# 合并两个配置文件
+./scripts/config-merger.sh -b base.yaml -o overlay.yaml -O merged.yaml
+
+# 合并环境配置
+./scripts/config-merger.sh -e production -O config/production.merged.yaml
+
+# 显示配置差异
+./scripts/config-merger.sh --diff base.yaml overlay.yaml
+
+# 预览合并结果
+./scripts/config-merger.sh -b base.yaml -o overlay.yaml --dry-run
+```
+
+### 代码质量检查
+
+```bash
+# 运行 ShellCheck 检查
+./scripts/lint.sh
+
+# 只检查特定目录
+./scripts/lint.sh --dir scripts
+
+# 启用自动修复建议
+./scripts/lint.sh --fix
+```
+
+## 📦 使用模板
+
+### GitHub Actions
+
+```bash
+# 复制 CI/CD 工作流
+cp templates/github-actions/ci-cd.yaml .github/workflows/
+
+# 复制 PR 验证工作流
+cp templates/github-actions/pr-validation.yaml .github/workflows/
+
+# 复制发布工作流
+cp templates/github-actions/release.yaml .github/workflows/
+```
+
+### Docker
+
+```bash
+# 使用 Node.js Dockerfile
+cp templates/docker/Dockerfile.node Dockerfile
+
+# 使用开发环境 compose
+cp templates/docker/docker-compose.dev.yaml docker-compose.yaml
+
+# 启动开发环境
+docker compose up -d
+```
+
+### Kubernetes
+
+```bash
+# 复制部署配置
+cp templates/kubernetes/deployment.yaml k8s/
+
+# 复制 Ingress 配置
+cp templates/kubernetes/ingress.yaml k8s/
+
+# 部署到集群
+kubectl apply -f k8s/
+```
+
+### Terraform
+
+```bash
+# 复制基础设施配置
+cp -r templates/terraform/ infrastructure/
+
+# 初始化 Terraform
+cd infrastructure && terraform init
+
+# 规划变更
+terraform plan -var-file="env/production.tfvars"
+
+# 应用变更
+terraform apply -var-file="env/production.tfvars"
 ```
 
 ## 🧪 测试框架
@@ -221,6 +303,19 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
 fi
 ```
 
+### 运行覆盖率检测
+
+```bash
+# 基本覆盖率分析
+./tests/coverage.sh
+
+# 详细函数覆盖
+./tests/coverage.sh --detail
+
+# 生成 HTML 报告
+./tests/coverage.sh --html
+```
+
 ## 🔧 配置说明
 
 ### 环境变量覆盖
@@ -239,24 +334,27 @@ export CFG_LOG_LEVEL="DEBUG"
 4. 中央配置（`config/central-config.yaml`）
 5. 默认值（最低）
 
-## 🤖 BMad-Method 集成
+## 🔒 安全特性
 
-本项目集成了 BMad-Method，提供 AI 驱动的开发体验：
+### 命令执行安全
 
-### 可用命令
+项目使用 `safe_exec_cmd()` 函数替代危险的 `eval`，自动检测并拒绝包含命令注入模式的输入。
 
-- `/bmad-master` - 主执行器
-- `/bmad-orchestrator` - 协调器
-- `/dev` - 开发代理
-- `/qa` - 质量保证代理
-- `/pm` - 项目管理代理
+### 敏感数据处理
 
-### 工作流程
+```bash
+# 安全删除文件（使用 shred）
+secure_delete "/path/to/sensitive/file"
 
-1. **规划阶段**：使用 Web UI 创建 PRD 和架构文档
-2. **开发阶段**：通过 IDE 实施用户故事
-3. **测试阶段**：自动化测试和代码审查
-4. **部署阶段**：自动化部署和监控
+# 清理敏感环境变量
+secure_unset_vars
+```
+
+### 代码质量
+
+- 所有脚本使用 `set -euo pipefail` 严格模式
+- 集成 ShellCheck 静态分析
+- 统一的错误处理机制
 
 ## 📊 性能特点
 
@@ -264,13 +362,6 @@ export CFG_LOG_LEVEL="DEBUG"
 - **启动时间**：< 100ms
 - **并发支持**：支持多任务并行
 - **可扩展性**：模块化设计，易于扩展
-
-## 🛡️ 安全特性
-
-- **敏感信息保护**：自动过滤密钥和密码
-- **权限控制**：基于文件系统的权限管理
-- **审计日志**：完整的操作记录
-- **安全扫描**：集成安全检查工具
 
 ## 🤝 贡献指南
 
@@ -280,16 +371,18 @@ export CFG_LOG_LEVEL="DEBUG"
 
 1. Fork 本仓库
 2. 创建功能分支：`git checkout -b feature/new-feature`
-3. 提交更改：`git commit -m 'Add new feature'`
-4. 推送分支：`git push origin feature/new-feature`
-5. 创建 Pull Request
+3. 运行代码检查：`./scripts/lint.sh`
+4. 运行测试：`./tests/run-tests.sh`
+5. 提交更改：`git commit -m 'Add new feature'`
+6. 推送分支：`git push origin feature/new-feature`
+7. 创建 Pull Request
 
 ### 代码规范
 
 - 遵循 Shell Best Practices
+- 通过 ShellCheck 检查
 - 添加测试覆盖
 - 更新相关文档
-- 确保 CI/CD 通过
 
 ## 📄 许可证
 
@@ -301,7 +394,7 @@ export CFG_LOG_LEVEL="DEBUG"
 
 - [BMad-Method](https://github.com/bmad-code-org/BMAD-METHOD) - AI 驱动的敏捷开发框架
 - [ShellCheck](https://www.shellcheck.net/) - Shell 脚本静态分析工具
-- [Bash Boilerplate](https://github.com/termux/bash-boilerplate) - Bash 脚本最佳实践
+- [yq](https://github.com/mikefarah/yq) - YAML 处理工具
 
 ## 📞 支持
 

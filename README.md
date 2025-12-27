@@ -2,10 +2,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell Script](https://img.shields.io/badge/Shell-Bash-blue.svg)](https://www.gnu.org/software/bash/)
+[![ShellCheck](https://img.shields.io/badge/ShellCheck-Passed-brightgreen.svg)](https://www.shellcheck.net/)
 [![BMad-Method](https://img.shields.io/badge/Powered%20By-BMad--Method-green.svg)](https://github.com/bmad-code-org/BMAD-METHOD)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Baozhi888/CICD-solution)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://docker.com)
+[![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io)
 
 A lightweight, modular CI/CD automation solution built with Bash scripts, integrated with BMad-Method agile development framework. Designed for small to medium teams and individual developers.
 
@@ -27,6 +29,15 @@ Please select your preferred language:
 - Detailed configuration instructions and examples
 - Suitable for English-speaking users
 
+## ✨ Key Features | 核心特性
+
+- 🚀 **Zero Dependencies | 零依赖**: Pure Bash implementation
+- 🏗️ **Modular Architecture | 模块化架构**: Shared libraries and configuration-driven
+- 🧪 **Complete Testing | 完整测试**: Unit tests, integration tests, coverage reports
+- 🔒 **Security Hardened | 安全加固**: Command injection protection, secure data handling
+- 🛠️ **Rich Tools | 丰富工具**: Config wizard, API docs generator, config merger
+- 📦 **Enterprise Templates | 企业模板**: GitHub Actions, Docker/K8s, Terraform
+
 ## 📖 Documentation | 文档
 
 - **[User Guide | 使用指南](docs/user-guide.md)** - Complete user guide with step-by-step instructions
@@ -34,6 +45,7 @@ Please select your preferred language:
 - **[Architecture Patterns](docs/architecture-patterns.md)** - Design patterns and best practices
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Migrate from other CI/CD systems
 - **[Security Best Practices](docs/security-best-practices.md)** - Security guidelines and recommendations
+- **[Templates Guide](templates/README.md)** - CI/CD and IaC template documentation
 
 ## 🚀 Quick Start | 快速开始
 
@@ -42,42 +54,75 @@ Please select your preferred language:
 git clone https://github.com/Baozhi888/CICD-solution.git
 cd CICD-solution
 
+# Use the config wizard | 使用配置向导
+./scripts/config-wizard.sh
+
 # Run tests | 运行测试
 ./tests/run-tests.sh
-
-# View documentation | 查看文档
-ls README_*.md
 
 # Use the aicd CLI | 使用 aicd 命令行工具
 ./scripts/aicd.sh --help
 ```
 
-## ✨ Key Features | 核心特性
-
-- 🚀 **Zero Dependencies | 零依赖**: Pure Bash implementation
-- 🏗️ **Modular Architecture | 模块化架构**: Shared libraries and configuration-driven
-- 🧪 **Complete Testing | 完整测试**: Built-in testing framework
-- 🔄 **Smart Features | 智能功能**: Log rotation, version management
-- 🤖 **AI Enhanced | AI 增强**: BMad-Method integration
-
 ## 📁 Project Structure | 项目结构
 
 ```
 cicd-solution/
-├── lib/           # Core libraries | 核心库
-├── scripts/       # Executable scripts | 可执行脚本
-├── tests/         # Testing framework | 测试框架
-├── templates/     # CI/CD templates | CI/CD模板
-├── config/        # Configuration | 配置文件
-├── docs/          # Documentation | 文档
-└── examples/      # Examples | 示例项目
+├── lib/                    # Core libraries | 核心库
+│   ├── core/               # Core modules | 核心模块
+│   └── utils/              # Utility libraries | 工具库
+├── scripts/                # Executable scripts | 可执行脚本
+│   ├── aicd.sh             # Main CLI tool | 主命令行工具
+│   ├── config-wizard.sh    # Config wizard | 配置向导
+│   ├── api-docs-generator.sh  # API docs | API文档生成
+│   ├── config-merger.sh    # Config merger | 配置合并
+│   └── lint.sh             # Code linter | 代码检查
+├── tests/                  # Testing framework | 测试框架
+│   ├── unit/               # Unit tests | 单元测试
+│   ├── integration/        # Integration tests | 集成测试
+│   └── coverage.sh         # Coverage report | 覆盖率报告
+├── templates/              # CI/CD templates | CI/CD模板
+│   ├── github-actions/     # GitHub Actions workflows
+│   ├── docker/             # Docker & Compose configs
+│   ├── kubernetes/         # K8s deployment configs
+│   └── terraform/          # Terraform IaC
+├── config/                 # Configuration | 配置文件
+├── docs/                   # Documentation | 文档
+└── examples/               # Examples | 示例项目
 ```
+
+## 🛠️ Tools | 工具
+
+| Tool | Description |
+|------|-------------|
+| `config-wizard.sh` | Interactive configuration generator |
+| `api-docs-generator.sh` | Auto-generate API docs from scripts |
+| `config-merger.sh` | Deep merge YAML configurations |
+| `lint.sh` | ShellCheck code quality analysis |
+| `coverage.sh` | Test coverage detection & reports |
+
+## 📦 Templates | 模板
+
+| Template | Description |
+|----------|-------------|
+| GitHub Actions | CI/CD pipeline, PR validation, release workflows |
+| Docker | Multi-stage Dockerfiles, dev/prod compose configs |
+| Kubernetes | Deployment, HPA, Ingress, NetworkPolicy |
+| Terraform | AWS infrastructure (VPC, EKS, RDS, ElastiCache) |
 
 ## 🤝 Contributing | 贡献
 
 We welcome all forms of contributions! Please read our [Contribution Guide](CONTRIBUTING.md).
 
 我们欢迎所有形式的贡献！请阅读我们的[贡献指南](CONTRIBUTING.md)。
+
+```bash
+# Run linter before commit
+./scripts/lint.sh
+
+# Run tests
+./tests/run-tests.sh
+```
 
 ## 📄 License | 许可证
 
