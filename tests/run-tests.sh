@@ -130,12 +130,22 @@ run_test_suite() {
 # 运行单元测试
 if [ "$UNIT_TESTS" = true ]; then
     echo -e "${RUNNER_YELLOW}=== 单元测试 ===${RUNNER_NC}"
-    
+
     # 核心库测试
     run_test_suite "核心库测试" "$SCRIPT_DIR/unit/test-core.sh"
-    
+
     # 配置管理测试
     run_test_suite "配置管理测试" "$SCRIPT_DIR/unit/test-config-simple.sh"
+
+    # aicd 主程序测试
+    if [ -f "$SCRIPT_DIR/unit/test-aicd.sh" ]; then
+        run_test_suite "aicd主程序测试" "$SCRIPT_DIR/unit/test-aicd.sh"
+    fi
+
+    # 颜色库测试
+    if [ -f "$SCRIPT_DIR/unit/test-utils-colors.sh" ]; then
+        run_test_suite "颜色库测试" "$SCRIPT_DIR/unit/test-utils-colors.sh"
+    fi
 fi
 
 # 运行集成测试
@@ -154,9 +164,13 @@ fi
 # 生成覆盖率报告（如果启用）
 if [ "$TEST_COVERAGE" = true ]; then
     echo -e "\n${RUNNER_YELLOW}=== 生成覆盖率报告 ===${RUNNER_NC}"
-    
-    # 这里可以集成覆盖率工具，如 shcov 或 kcov
-    echo "覆盖率报告功能待实现"
+
+    # 使用覆盖率脚本
+    if [ -f "$SCRIPT_DIR/coverage.sh" ]; then
+        bash "$SCRIPT_DIR/coverage.sh" --html
+    else
+        echo "覆盖率脚本不存在: $SCRIPT_DIR/coverage.sh"
+    fi
 fi
 
 # 打印最终结果
