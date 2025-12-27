@@ -1,0 +1,40 @@
+# =============================================================================
+# Terraform 生产环境变量文件示例
+# =============================================================================
+# 复制此文件并重命名为 production.tfvars，然后填写实际值
+#
+# 用法:
+#   terraform plan -var-file="env/production.tfvars"
+#   terraform apply -var-file="env/production.tfvars"
+# =============================================================================
+
+# 项目基本配置
+project_name = "myapp"
+environment  = "production"
+aws_region   = "ap-northeast-1"
+
+# 网络配置
+vpc_cidr = "10.0.0.0/16"
+availability_zones = [
+  "ap-northeast-1a",
+  "ap-northeast-1c",
+  "ap-northeast-1d"
+]
+
+# EKS 配置
+eks_cluster_version = "1.28"
+node_instance_types = ["t3.medium", "t3.large"]
+node_desired_size   = 3
+node_min_size       = 2
+node_max_size       = 10
+
+# RDS 配置
+db_instance_class    = "db.t3.medium"
+db_allocated_storage = 20
+
+# 标签
+tags = {
+  Team        = "platform"
+  CostCenter  = "engineering"
+  Application = "myapp"
+}

@@ -1,0 +1,193 @@
+# =============================================================================
+# Kubernetes Ingress 模板
+# =============================================================================
+# 支持 HTTPS、路由、限流等高级功能
+#
+# 用法:
+#   kubectl apply -f ingress.yaml
+# =============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.name | default "app" }}-ingress
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    app: {{ .Values.name | default "app" }}
+  annotations:
+    # Nginx Ingress Controller 配置
+    kubernetes.io/ingress.class: nginx
+
+    # SSL 重定向
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # 证书管理 (cert-manager)
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+    # 代理配置
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+
+    # 限流配置
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+
+    # CORS 配置
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, PUT, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+
+    # 安全头
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+spec:
+  ingressClassName: nginx
+
+  # TLS 配置
+  tls:
+    - hosts:
+        - {{ .Values.host | default "example.com" }}
+        - api.{{ .Values.host | default "example.com" }}
+      secretName: {{ .Values.name }}-tls
+
+  # 路由规则
+  rules:
+    # 主域名
+    - host: {{ .Values.host | default "example.com" }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.name | default "app" }}
+                port:
+                  number: 80
+
+    # API 子域名
+    - host: api.{{ .Values.host | default "example.com" }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.name | default "app" }}-api
+                port:
+                  number: 80
+
+---
+# =============================================================================
+# ConfigMap 配置
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name | default "app" }}-config
+  namespace: {{ .Values.namespace | default "default" }}
+data:
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+  TZ: "Asia/Shanghai"
+
+---
+# =============================================================================
+# Secret 模板 (敏感数据)
+# =============================================================================
+# 注意: 实际使用时应通过 Sealed Secrets 或 External Secrets 管理
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.name | default "app" }}-secrets
+  namespace: {{ .Values.namespace | default "default" }}
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://user:password@db:5432/app"
+  REDIS_URL: "redis://redis:6379"
+  SECRET_KEY: "your-secret-key-here"
+
+---
+# =============================================================================
+# NetworkPolicy 网络策略
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.name | default "app" }}-network-policy
+  namespace: {{ .Values.namespace | default "default" }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.name | default "app" }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # 允许来自 Ingress Controller 的流量
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+    # 允许来自同命名空间的 Pod
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # 允许访问数据库
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # 允许访问 Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # 允许 DNS 解析
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # 允许外部 HTTPS 访问（第三方API）
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# =============================================================================
+# ServiceAccount
+# =============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.name | default "app" }}
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    app: {{ .Values.name | default "app" }}
+automountServiceAccountToken: false

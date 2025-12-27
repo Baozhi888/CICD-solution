@@ -1,0 +1,103 @@
+# =============================================================================
+# 多阶段构建 Dockerfile 模板 - Python
+# =============================================================================
+# 优化的 Python 应用 Docker 镜像构建
+#
+# 特性：
+#   - 多阶段构建减小镜像体积
+#   - 使用虚拟环境隔离依赖
+#   - 非 root 用户运行
+#   - 健康检查
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 阶段 1: 构建环境
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# 安装构建依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建虚拟环境
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# 升级 pip
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+
+# 复制依赖文件
+COPY requirements*.txt ./
+
+# 安装依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 如果有 requirements-prod.txt，安装生产依赖
+RUN if [ -f requirements-prod.txt ]; then \
+        pip install --no-cache-dir -r requirements-prod.txt; \
+    fi
+
+# -----------------------------------------------------------------------------
+# 阶段 2: 生产镜像
+# -----------------------------------------------------------------------------
+FROM python:3.11-slim AS runner
+
+WORKDIR /app
+
+# 设置环境变量
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PATH="/opt/venv/bin:$PATH" \
+    APP_HOME=/app
+
+# 安装运行时依赖
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    dumb-init \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# 创建非 root 用户
+RUN groupadd --gid 1001 appgroup && \
+    useradd --uid 1001 --gid appgroup --shell /bin/bash --create-home appuser
+
+# 复制虚拟环境
+COPY --from=builder /opt/venv /opt/venv
+
+# 复制应用代码
+COPY --chown=appuser:appgroup . .
+
+# 切换到非 root 用户
+USER appuser
+
+# 暴露端口
+EXPOSE 8000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# 使用 dumb-init 作为 PID 1
+ENTRYPOINT ["dumb-init", "--"]
+
+# 默认启动命令 (FastAPI + Uvicorn)
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# -----------------------------------------------------------------------------
+# 元数据标签
+# -----------------------------------------------------------------------------
+ARG VERSION=unknown
+ARG BUILD_DATE
+ARG GIT_COMMIT
+
+LABEL org.opencontainers.image.title="Python App" \
+      org.opencontainers.image.description="Python Application" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.vendor="Your Organization"

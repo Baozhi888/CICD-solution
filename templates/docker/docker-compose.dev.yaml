@@ -1,0 +1,161 @@
+# =============================================================================
+# Docker Compose 开发环境模板
+# =============================================================================
+# 完整的本地开发环境配置
+#
+# 用法:
+#   docker compose -f docker-compose.dev.yaml up -d
+#   docker compose -f docker-compose.dev.yaml logs -f app
+# =============================================================================
+
+version: '3.9'
+
+services:
+  # ===========================================================================
+  # 应用服务
+  # ===========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # 使用构建阶段，包含开发依赖
+    container_name: ${PROJECT_NAME:-app}-dev
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      # 挂载源代码，支持热重载
+      - .:/app
+      - /app/node_modules  # 保留容器内的 node_modules
+    environment:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/${DB_NAME:-app}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    # 开发环境使用 nodemon 热重载
+    command: npm run dev
+
+  # ===========================================================================
+  # PostgreSQL 数据库
+  # ===========================================================================
+  db:
+    image: postgres:15-alpine
+    container_name: ${PROJECT_NAME:-app}-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/init-db:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-app}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # ===========================================================================
+  # Redis 缓存
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ${PROJECT_NAME:-app}-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # ===========================================================================
+  # pgAdmin (数据库管理界面)
+  # ===========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ${PROJECT_NAME:-app}-pgadmin
+    restart: unless-stopped
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - db
+    networks:
+      - app-network
+    profiles:
+      - tools
+
+  # ===========================================================================
+  # Redis Commander (Redis 管理界面)
+  # ===========================================================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ${PROJECT_NAME:-app}-redis-ui
+    restart: unless-stopped
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - app-network
+    profiles:
+      - tools
+
+  # ===========================================================================
+  # MailHog (邮件测试服务)
+  # ===========================================================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ${PROJECT_NAME:-app}-mailhog
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"  # SMTP
+      - "${MAILHOG_UI_PORT:-8025}:8025"    # Web UI
+    networks:
+      - app-network
+    profiles:
+      - tools
+
+# =============================================================================
+# 网络配置
+# =============================================================================
+networks:
+  app-network:
+    driver: bridge
+    name: ${PROJECT_NAME:-app}-network
+
+# =============================================================================
+# 数据卷配置
+# =============================================================================
+volumes:
+  postgres-data:
+    name: ${PROJECT_NAME:-app}-postgres-data
+  redis-data:
+    name: ${PROJECT_NAME:-app}-redis-data
+  pgadmin-data:
+    name: ${PROJECT_NAME:-app}-pgadmin-data

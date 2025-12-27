@@ -1,0 +1,313 @@
+# =============================================================================
+# 发布工作流模板
+# =============================================================================
+# 自动化版本发布流程
+#
+# 功能：
+#   - 自动生成版本号（语义化版本）
+#   - 生成 CHANGELOG
+#   - 创建 GitHub Release
+#   - 构建和发布 Docker 镜像
+#   - 发布到 npm（可选）
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: '发布类型'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: '是否为预发布版本'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  # ===========================================================================
+  # 准备发布
+  # ===========================================================================
+  prepare:
+    name: 准备发布
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 确定版本号
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # 从标签获取版本
+            TAG=${GITHUB_REF#refs/tags/}
+            VERSION=${TAG#v}
+          else
+            # 从 package.json 获取当前版本并递增
+            CURRENT=$(node -p "require('./package.json').version")
+            IFS='.' read -ra PARTS <<< "$CURRENT"
+            MAJOR=${PARTS[0]}
+            MINOR=${PARTS[1]}
+            PATCH=${PARTS[2]}
+
+            case "${{ github.event.inputs.release_type }}" in
+              major)
+                VERSION="$((MAJOR + 1)).0.0"
+                ;;
+              minor)
+                VERSION="${MAJOR}.$((MINOR + 1)).0"
+                ;;
+              patch)
+                VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+                ;;
+            esac
+
+            if [[ "${{ github.event.inputs.prerelease }}" == "true" ]]; then
+              VERSION="${VERSION}-rc.$(date +%Y%m%d%H%M%S)"
+            fi
+
+            TAG="v${VERSION}"
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "版本: ${VERSION}, 标签: ${TAG}"
+
+      - name: 生成 CHANGELOG
+        id: changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: 输出 CHANGELOG
+        run: |
+          echo "## 更新日志" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat CHANGELOG.md >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================================================
+  # 构建和测试
+  # ===========================================================================
+  build:
+    name: 构建
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 更新版本号
+        run: npm version ${{ needs.prepare.outputs.version }} --no-git-tag-version
+
+      - name: 运行测试
+        run: npm test -- --ci
+
+      - name: 构建
+        run: npm run build
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ needs.prepare.outputs.version }}
+          path: |
+            dist/
+            package.json
+          retention-days: 7
+
+  # ===========================================================================
+  # 构建 Docker 镜像
+  # ===========================================================================
+  docker:
+    name: Docker 镜像
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ needs.prepare.outputs.version }}
+          path: .
+
+      - name: 设置 QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 提取 Docker 元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.prepare.outputs.version }}
+            type=raw,value=latest,enable=${{ !contains(needs.prepare.outputs.version, '-') }}
+
+      - name: 构建并推送镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.version }}
+
+  # ===========================================================================
+  # 发布 npm 包（可选）
+  # ===========================================================================
+  npm-publish:
+    name: 发布 npm
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    if: ${{ !contains(needs.prepare.outputs.version, '-') }}  # 非预发布版本才发布
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ needs.prepare.outputs.version }}
+          path: .
+
+      - name: 发布到 npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ===========================================================================
+  # 创建 GitHub Release
+  # ===========================================================================
+  release:
+    name: 创建 Release
+    runs-on: ubuntu-latest
+    needs: [prepare, build, docker]
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 下载构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ needs.prepare.outputs.version }}
+          path: dist/
+
+      - name: 打包构建产物
+        run: |
+          cd dist
+          tar -czvf ../release-${{ needs.prepare.outputs.version }}.tar.gz .
+          cd ..
+          zip -r release-${{ needs.prepare.outputs.version }}.zip dist/
+
+      - name: 生成 CHANGELOG
+        id: changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Release ${{ needs.prepare.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ contains(needs.prepare.outputs.version, '-') }}
+          files: |
+            release-${{ needs.prepare.outputs.version }}.tar.gz
+            release-${{ needs.prepare.outputs.version }}.zip
+
+      - name: 创建标签（手动触发时）
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+          git tag -a ${{ needs.prepare.outputs.tag }} -m "Release ${{ needs.prepare.outputs.version }}"
+          git push origin ${{ needs.prepare.outputs.tag }}
+
+  # ===========================================================================
+  # 通知
+  # ===========================================================================
+  notify:
+    name: 发送通知
+    runs-on: ubuntu-latest
+    needs: [prepare, release]
+    if: always()
+    steps:
+      - name: Slack 通知
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#releases'
+          text: |
+            🚀 新版本发布: ${{ needs.prepare.outputs.version }}
+            📦 Docker: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}
+          fields: repo,commit,author,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

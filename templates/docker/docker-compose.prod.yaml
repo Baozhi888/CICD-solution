@@ -1,0 +1,246 @@
+# =============================================================================
+# Docker Compose 生产环境模板
+# =============================================================================
+# 生产级别的容器编排配置
+#
+# 用法:
+#   docker compose -f docker-compose.prod.yaml up -d
+#   docker compose -f docker-compose.prod.yaml ps
+# =============================================================================
+
+version: '3.9'
+
+services:
+  # ===========================================================================
+  # Nginx 反向代理 / 负载均衡
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: ${PROJECT_NAME:-app}-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===========================================================================
+  # 应用服务 (可扩展)
+  # ===========================================================================
+  app:
+    image: ${REGISTRY:-ghcr.io}/${IMAGE_NAME:-app}:${VERSION:-latest}
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    deploy:
+      mode: replicated
+      replicas: ${REPLICAS:-3}
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  # ===========================================================================
+  # PostgreSQL 数据库 (主从复制配置)
+  # ===========================================================================
+  db:
+    image: postgres:15-alpine
+    container_name: ${PROJECT_NAME:-app}-db
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===========================================================================
+  # Redis 集群
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ${PROJECT_NAME:-app}-redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===========================================================================
+  # Prometheus 监控
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ${PROJECT_NAME:-app}-prometheus
+    restart: always
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+      - backend
+    profiles:
+      - monitoring
+
+  # ===========================================================================
+  # Grafana 可视化
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ${PROJECT_NAME:-app}-grafana
+    restart: always
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+    profiles:
+      - monitoring
+
+  # ===========================================================================
+  # Loki 日志聚合
+  # ===========================================================================
+  loki:
+    image: grafana/loki:latest
+    container_name: ${PROJECT_NAME:-app}-loki
+    restart: always
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./docker/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+    profiles:
+      - monitoring
+
+# =============================================================================
+# 网络配置
+# =============================================================================
+networks:
+  frontend:
+    driver: bridge
+    name: ${PROJECT_NAME:-app}-frontend
+  backend:
+    driver: bridge
+    internal: true
+    name: ${PROJECT_NAME:-app}-backend
+  monitoring:
+    driver: bridge
+    name: ${PROJECT_NAME:-app}-monitoring
+
+# =============================================================================
+# 数据卷配置
+# =============================================================================
+volumes:
+  postgres-data:
+    name: ${PROJECT_NAME:-app}-postgres-data
+  redis-data:
+    name: ${PROJECT_NAME:-app}-redis-data
+  nginx-logs:
+    name: ${PROJECT_NAME:-app}-nginx-logs
+  prometheus-data:
+    name: ${PROJECT_NAME:-app}-prometheus-data
+  grafana-data:
+    name: ${PROJECT_NAME:-app}-grafana-data
+  loki-data:
+    name: ${PROJECT_NAME:-app}-loki-data

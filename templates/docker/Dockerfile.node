@@ -1,0 +1,108 @@
+# =============================================================================
+# 多阶段构建 Dockerfile 模板
+# =============================================================================
+# 优化的 Node.js 应用 Docker 镜像构建
+#
+# 特性：
+#   - 多阶段构建减小镜像体积
+#   - 非 root 用户运行
+#   - 健康检查
+#   - 安全加固
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 阶段 1: 依赖安装
+# -----------------------------------------------------------------------------
+FROM node:18-alpine AS deps
+
+WORKDIR /app
+
+# 只复制依赖文件，利用缓存
+COPY package*.json ./
+COPY yarn.lock* ./
+COPY pnpm-lock.yaml* ./
+
+# 根据锁文件类型选择包管理器
+RUN \
+    if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm install --frozen-lockfile; \
+    else npm ci --only=production; \
+    fi
+
+# -----------------------------------------------------------------------------
+# 阶段 2: 构建
+# -----------------------------------------------------------------------------
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# 复制依赖
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# 设置构建参数
+ARG VERSION=unknown
+ARG BUILD_DATE
+ARG GIT_COMMIT
+
+ENV NODE_ENV=production
+
+# 构建应用
+RUN npm run build
+
+# 清理开发依赖
+RUN npm prune --production
+
+# -----------------------------------------------------------------------------
+# 阶段 3: 生产镜像
+# -----------------------------------------------------------------------------
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+# 安全配置
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 appuser
+
+# 安装必要的运行时工具
+RUN apk add --no-cache \
+    curl \
+    dumb-init \
+    && rm -rf /var/cache/apk/*
+
+# 设置环境变量
+ENV NODE_ENV=production \
+    PORT=3000 \
+    HOST=0.0.0.0
+
+# 复制构建产物和生产依赖
+COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
+COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:nodejs /app/package.json ./package.json
+
+# 切换到非 root 用户
+USER appuser
+
+# 暴露端口
+EXPOSE 3000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
+
+# 使用 dumb-init 作为 PID 1 进程
+ENTRYPOINT ["dumb-init", "--"]
+
+# 启动命令
+CMD ["node", "dist/index.js"]
+
+# -----------------------------------------------------------------------------
+# 元数据标签
+# -----------------------------------------------------------------------------
+LABEL org.opencontainers.image.title="App Name" \
+      org.opencontainers.image.description="Application Description" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.vendor="Your Organization" \
+      org.opencontainers.image.licenses="MIT"

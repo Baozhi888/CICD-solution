@@ -1,0 +1,249 @@
+# =============================================================================
+# Kubernetes Deployment 模板
+# =============================================================================
+# 完整的应用部署配置
+#
+# 用法:
+#   kubectl apply -f deployment.yaml
+#   kubectl rollout status deployment/app
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name | default "app" }}
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    app: {{ .Values.name | default "app" }}
+    version: {{ .Values.version | default "v1" }}
+    environment: {{ .Values.environment | default "production" }}
+  annotations:
+    kubernetes.io/change-cause: "Deployment {{ .Values.version }}"
+spec:
+  replicas: {{ .Values.replicas | default 3 }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: {{ .Values.name | default "app" }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name | default "app" }}
+        version: {{ .Values.version | default "v1" }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      # 服务账号
+      serviceAccountName: {{ .Values.serviceAccount | default "default" }}
+
+      # 安全上下文
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      # 优雅终止时间
+      terminationGracePeriodSeconds: 30
+
+      # 亲和性配置 - 分散部署到不同节点
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: {{ .Values.name | default "app" }}
+                topologyKey: kubernetes.io/hostname
+
+      # 容器配置
+      containers:
+        - name: app
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+
+          # 端口配置
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+
+          # 环境变量
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-config
+                  key: LOG_LEVEL
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.name }}-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.name }}-secrets
+                  key: REDIS_URL
+
+          # 资源限制
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu | default "100m" }}
+              memory: {{ .Values.resources.requests.memory | default "128Mi" }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu | default "500m" }}
+              memory: {{ .Values.resources.limits.memory | default "512Mi" }}
+
+          # 存活探针
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # 就绪探针
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # 启动探针 (慢启动应用)
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+
+          # 安全上下文
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+
+          # 挂载配置
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+
+      # 卷配置
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ .Values.name }}-config
+
+      # 镜像拉取密钥
+      imagePullSecrets:
+        - name: registry-credentials
+
+---
+# =============================================================================
+# Service 配置
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name | default "app" }}
+  namespace: {{ .Values.namespace | default "default" }}
+  labels:
+    app: {{ .Values.name | default "app" }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: {{ .Values.name | default "app" }}
+
+---
+# =============================================================================
+# HorizontalPodAutoscaler 配置
+# =============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.name | default "app" }}-hpa
+  namespace: {{ .Values.namespace | default "default" }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.name | default "app" }}
+  minReplicas: {{ .Values.autoscaling.minReplicas | default 2 }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas | default 10 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPU | default 70 }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemory | default 80 }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+        - type: Pods
+          value: 4
+          periodSeconds: 15
+      selectPolicy: Max
+
+---
+# =============================================================================
+# PodDisruptionBudget 配置
+# =============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.name | default "app" }}-pdb
+  namespace: {{ .Values.namespace | default "default" }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.name | default "app" }}
