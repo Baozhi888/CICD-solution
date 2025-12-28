@@ -37,6 +37,13 @@ A lightweight, modular CI/CD automation solution built with Bash scripts, integr
 - **API Docs Generator**: Auto-extract function documentation
 - **Config Merger**: YAML deep merge tool
 
+### 🤖 **AI Supervision**
+- **Smart Log Analysis**: AI-driven error detection and root cause analysis
+- **Config Audit**: Security checks, performance optimization suggestions
+- **Health Monitoring**: System health assessment and issue prediction
+- **Smart Alerting**: Alert aggregation, prioritization, multi-channel notification
+- **Multi-Provider Support**: Claude API / OpenAI compatible API
+
 ### 📦 **Enterprise Templates**
 - **GitHub Actions**: Complete CI/CD pipeline templates
 - **Docker/Kubernetes**: Production-grade deployment configs
@@ -57,6 +64,13 @@ cicd-solution/
 │   ├── utils/                 # Utility libraries
 │   │   ├── colors.sh          # Unified color definitions
 │   │   └── args-parser.sh     # Argument parser
+│   ├── ai/                    # AI modules
+│   │   ├── ai-core.sh         # AI core functionality
+│   │   ├── api-client.sh      # API client
+│   │   ├── log-analyzer.sh    # Log analysis
+│   │   ├── config-advisor.sh  # Config advisor
+│   │   ├── health-analyzer.sh # Health analyzer
+│   │   └── alert-manager.sh   # Alert manager
 │   └── core-loader.sh         # Library loader
 ├── scripts/                   # Executable scripts
 │   ├── aicd.sh                # Main CLI tool
@@ -67,6 +81,7 @@ cicd-solution/
 │   ├── log-manager.sh         # Log manager
 │   ├── config-version-manager.sh  # Config version manager
 │   ├── validate-config.sh     # Configuration validator
+│   ├── ai-supervisor.sh       # AI supervision tool
 │   └── generate-docs.sh       # Documentation generator
 ├── tests/                     # Testing framework
 │   ├── run-tests.sh           # Test runner
@@ -219,6 +234,58 @@ Deep merge multiple YAML configuration files:
 
 # Enable auto-fix suggestions
 ./scripts/lint.sh --fix
+```
+
+## 🤖 AI Supervision
+
+### Enable AI Features
+
+```bash
+# Set API key
+export CLAUDE_API_KEY="your-api-key"
+# Or
+export OPENAI_API_KEY="your-api-key"
+
+# Edit config to enable AI
+# Set ai.enabled: true in config/ai-config.yaml
+```
+
+### Using AI Supervisor Tool
+
+```bash
+# Show AI module status
+./scripts/ai-supervisor.sh status
+
+# Analyze logs
+./scripts/ai-supervisor.sh analyze-logs /var/log/app.log
+
+# Detect errors and suggest fixes
+./scripts/ai-supervisor.sh detect-errors /var/log/app.log
+
+# Audit configuration file
+./scripts/ai-supervisor.sh audit-config config/central-config.yaml
+
+# Security check
+./scripts/ai-supervisor.sh check-security config/central-config.yaml
+
+# Execute health check
+./scripts/ai-supervisor.sh health-check
+
+# Generate health report
+./scripts/ai-supervisor.sh health-report
+
+# Ask AI a question
+./scripts/ai-supervisor.sh ask "How to optimize Docker image size?"
+```
+
+### Using AI via aicd
+
+```bash
+# Use aicd's ai subcommand
+./scripts/aicd.sh ai status
+./scripts/aicd.sh ai analyze-logs /path/to/log
+./scripts/aicd.sh ai health
+./scripts/aicd.sh ai ask "your question"
 ```
 
 ## 📦 Using Templates

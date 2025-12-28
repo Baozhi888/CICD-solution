@@ -36,6 +36,7 @@ Please select your preferred language:
 - 🧪 **Complete Testing | 完整测试**: Unit tests, integration tests, coverage reports
 - 🔒 **Security Hardened | 安全加固**: Command injection protection, secure data handling
 - 🛠️ **Rich Tools | 丰富工具**: Config wizard, API docs generator, config merger
+- 🤖 **AI Supervision | AI监督**: Smart log analysis, config audit, health monitoring
 - 📦 **Enterprise Templates | 企业模板**: GitHub Actions, Docker/K8s, Terraform
 
 ## 📖 Documentation | 文档
@@ -100,6 +101,7 @@ cicd-solution/
 | `config-merger.sh` | Deep merge YAML configurations |
 | `lint.sh` | ShellCheck code quality analysis |
 | `coverage.sh` | Test coverage detection & reports |
+| `ai-supervisor.sh` | AI-powered supervision and analysis |
 
 ## 📦 Templates | 模板
 

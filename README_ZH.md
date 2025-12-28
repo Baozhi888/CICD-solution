@@ -37,6 +37,13 @@
 - **API 文档生成**：自动提取函数文档
 - **配置合并**：YAML 深度合并工具
 
+### 🤖 **AI 监督功能**
+- **日志智能分析**：AI 驱动的日志错误检测和根因分析
+- **配置审计**：安全检查、性能优化建议
+- **健康监控**：系统健康评估和问题预测
+- **智能告警**：告警聚合、优先级排序、多渠道通知
+- **支持多提供商**：Claude API / OpenAI 兼容 API
+
 ### 📦 **企业级模板**
 - **GitHub Actions**：完整 CI/CD 流水线模板
 - **Docker/Kubernetes**：生产级部署配置
@@ -57,6 +64,13 @@ cicd-solution/
 │   ├── utils/                 # 工具库
 │   │   ├── colors.sh          # 统一颜色定义
 │   │   └── args-parser.sh     # 参数解析器
+│   ├── ai/                    # AI 模块
+│   │   ├── ai-core.sh         # AI 核心功能
+│   │   ├── api-client.sh      # API 客户端
+│   │   ├── log-analyzer.sh    # 日志分析
+│   │   ├── config-advisor.sh  # 配置顾问
+│   │   ├── health-analyzer.sh # 健康分析
+│   │   └── alert-manager.sh   # 告警管理
 │   └── core-loader.sh         # 库加载器
 ├── scripts/                   # 可执行脚本
 │   ├── aicd.sh                # 主命令行工具
@@ -67,6 +81,7 @@ cicd-solution/
 │   ├── log-manager.sh         # 日志管理器
 │   ├── config-version-manager.sh  # 配置版本管理
 │   ├── validate-config.sh     # 配置验证
+│   ├── ai-supervisor.sh       # AI 监督工具
 │   └── generate-docs.sh       # 文档生成器
 ├── tests/                     # 测试框架
 │   ├── run-tests.sh           # 测试运行器
@@ -219,6 +234,58 @@ cd CICD-solution
 
 # 启用自动修复建议
 ./scripts/lint.sh --fix
+```
+
+## 🤖 AI 监督功能
+
+### 启用 AI 功能
+
+```bash
+# 设置 API 密钥
+export CLAUDE_API_KEY="your-api-key"
+# 或
+export OPENAI_API_KEY="your-api-key"
+
+# 编辑配置启用 AI
+# config/ai-config.yaml 中设置 ai.enabled: true
+```
+
+### 使用 AI 监督工具
+
+```bash
+# 显示 AI 模块状态
+./scripts/ai-supervisor.sh status
+
+# 分析日志
+./scripts/ai-supervisor.sh analyze-logs /var/log/app.log
+
+# 检测错误并建议修复
+./scripts/ai-supervisor.sh detect-errors /var/log/app.log
+
+# 审计配置文件
+./scripts/ai-supervisor.sh audit-config config/central-config.yaml
+
+# 安全检查
+./scripts/ai-supervisor.sh check-security config/central-config.yaml
+
+# 执行健康检查
+./scripts/ai-supervisor.sh health-check
+
+# 生成健康报告
+./scripts/ai-supervisor.sh health-report
+
+# 向 AI 提问
+./scripts/ai-supervisor.sh ask "如何优化 Docker 镜像大小?"
+```
+
+### 通过 aicd 使用 AI
+
+```bash
+# 使用 aicd 的 ai 子命令
+./scripts/aicd.sh ai status
+./scripts/aicd.sh ai analyze-logs /path/to/log
+./scripts/aicd.sh ai health
+./scripts/aicd.sh ai ask "问题内容"
 ```
 
 ## 📦 使用模板
