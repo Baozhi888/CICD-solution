@@ -49,6 +49,11 @@ A lightweight, modular CI/CD automation solution built with Bash scripts, integr
 - **Docker/Kubernetes**: Production-grade deployment configs
 - **Terraform**: AWS Infrastructure as Code
 
+### 🔌 **MCP Server**
+- **Conversational Management**: Manage CI/CD via Claude Desktop chat
+- **Smart Tools**: Deploy, rollback, analyze, config management
+- **Resource Access**: Query pipelines, configs, and templates
+
 ## 📁 Project Structure
 
 ```
@@ -108,6 +113,11 @@ cicd-solution/
 │   └── terraform/             # Terraform IaC
 │       ├── main.tf            # AWS infrastructure
 │       └── env/               # Environment variables
+├── cicd-mcp-server/           # MCP Server
+│   ├── src/                   # TypeScript source
+│   │   ├── tools/             # MCP Tools
+│   │   └── resources/         # MCP Resources
+│   └── package.json           # Dependencies
 ├── config/                    # Configuration files
 │   ├── central-config.yaml    # Central configuration
 │   └── environment/           # Environment configs
@@ -287,6 +297,44 @@ export OPENAI_API_KEY="your-api-key"
 ./scripts/aicd.sh ai health
 ./scripts/aicd.sh ai ask "your question"
 ```
+
+## 🔌 MCP Server
+
+The project includes an MCP Server for conversational CI/CD management with Claude Desktop.
+
+### Installation
+
+```bash
+cd cicd-mcp-server
+npm install
+npm run build
+```
+
+### Configure Claude Desktop
+
+Add to your Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "cicd": {
+      "command": "node",
+      "args": ["/path/to/cicd-mcp-server/dist/index.js"],
+      "env": {
+        "CICD_PROJECT_ROOT": "/path/to/your/project"
+      }
+    }
+  }
+}
+```
+
+### Example Conversations
+
+- "Deploy v1.2.0 to staging for me"
+- "Analyze the recent deployment failure"
+- "Compare production and staging configs"
+- "Rollback to the previous version"
+- "Show system health status"
 
 ## 📦 Using Templates
 

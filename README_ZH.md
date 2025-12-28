@@ -49,6 +49,11 @@
 - **Docker/Kubernetes**：生产级部署配置
 - **Terraform**：AWS 基础设施即代码
 
+### 🔌 **MCP 服务器**
+- **对话式管理**：通过 Claude Desktop 对话式管理 CI/CD
+- **智能工具**：部署、回滚、分析、配置管理
+- **资源访问**：流水线、配置、模板资源查询
+
 ## 📁 项目结构
 
 ```
@@ -108,6 +113,11 @@ cicd-solution/
 │   └── terraform/             # Terraform IaC
 │       ├── main.tf            # AWS 基础设施
 │       └── env/               # 环境变量
+├── cicd-mcp-server/           # MCP 服务器
+│   ├── src/                   # TypeScript 源码
+│   │   ├── tools/             # MCP 工具
+│   │   └── resources/         # MCP 资源
+│   └── package.json           # 依赖配置
 ├── config/                    # 配置文件
 │   ├── central-config.yaml    # 中央配置
 │   └── environment/           # 环境配置
@@ -287,6 +297,44 @@ export OPENAI_API_KEY="your-api-key"
 ./scripts/aicd.sh ai health
 ./scripts/aicd.sh ai ask "问题内容"
 ```
+
+## 🔌 MCP 服务器
+
+项目包含 MCP 服务器，支持通过 Claude Desktop 进行对话式 CI/CD 管理。
+
+### 安装和构建
+
+```bash
+cd cicd-mcp-server
+npm install
+npm run build
+```
+
+### 配置 Claude Desktop
+
+在 Claude Desktop 配置文件中添加：
+
+```json
+{
+  "mcpServers": {
+    "cicd": {
+      "command": "node",
+      "args": ["/path/to/cicd-mcp-server/dist/index.js"],
+      "env": {
+        "CICD_PROJECT_ROOT": "/path/to/your/project"
+      }
+    }
+  }
+}
+```
+
+### 对话示例
+
+- "帮我部署 v1.2.0 到 staging"
+- "分析最近的部署失败"
+- "比较 production 和 staging 的配置差异"
+- "回滚到上一个版本"
+- "查看系统健康状态"
 
 ## 📦 使用模板
 

@@ -38,6 +38,7 @@ Please select your preferred language:
 - 🛠️ **Rich Tools | 丰富工具**: Config wizard, API docs generator, config merger
 - 🤖 **AI Supervision | AI监督**: Smart log analysis, config audit, health monitoring
 - 📦 **Enterprise Templates | 企业模板**: GitHub Actions, Docker/K8s, Terraform
+- 🔌 **MCP Server | MCP服务器**: Conversational CI/CD management via Claude Desktop
 
 ## 📖 Documentation | 文档
 
@@ -87,6 +88,11 @@ cicd-solution/
 │   ├── docker/             # Docker & Compose configs
 │   ├── kubernetes/         # K8s deployment configs
 │   └── terraform/          # Terraform IaC
+├── cicd-mcp-server/        # MCP Server for Claude Desktop
+│   ├── src/                # TypeScript source
+│   │   ├── tools/          # MCP Tools
+│   │   └── resources/      # MCP Resources
+│   └── package.json        # Dependencies
 ├── config/                 # Configuration | 配置文件
 ├── docs/                   # Documentation | 文档
 └── examples/               # Examples | 示例项目
@@ -102,6 +108,36 @@ cicd-solution/
 | `lint.sh` | ShellCheck code quality analysis |
 | `coverage.sh` | Test coverage detection & reports |
 | `ai-supervisor.sh` | AI-powered supervision and analysis |
+
+## 🔌 MCP Server | MCP 服务器
+
+The project includes an MCP Server for conversational CI/CD management with Claude Desktop.
+
+本项目包含 MCP 服务器，支持通过 Claude Desktop 进行对话式 CI/CD 管理。
+
+```bash
+# Install and build | 安装和构建
+cd cicd-mcp-server
+npm install
+npm run build
+```
+
+Configure in Claude Desktop:
+```json
+{
+  "mcpServers": {
+    "cicd": {
+      "command": "node",
+      "args": ["/path/to/cicd-mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
+Example conversations | 对话示例:
+- "帮我部署 v1.2.0 到 staging"
+- "分析最近的部署失败"
+- "比较 production 和 staging 的配置"
 
 ## 📦 Templates | 模板
 
