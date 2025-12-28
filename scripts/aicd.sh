@@ -62,8 +62,16 @@ aicd - AI-Enhanced CI/CD Command Line Interface
   analyze               分析依赖和性能
   log <subcommand>      日志管理
   docs                  生成文档
+  ai <subcommand>       AI 监督功能
   version               显示版本信息
   help                  显示此帮助信息
+
+AI 子命令:
+  ai status             显示 AI 模块状态
+  ai analyze-logs       分析日志文件
+  ai check-config       审计配置文件
+  ai health             执行健康检查
+  ai ask <question>     向 AI 提问
 
 选项:
   -v, --verbose         详细输出
@@ -637,10 +645,10 @@ cmd_log() {
 # 生成文档
 cmd_docs() {
     log_info "生成文档"
-    
+
     # 解析参数
     local api_docs=false
-    
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             --api)
@@ -652,7 +660,7 @@ cmd_docs() {
                 ;;
         esac
     done
-    
+
     # 调用文档生成脚本
     if [ -f "scripts/generate-docs.sh" ]; then
         if [ "$api_docs" = true ]; then
@@ -662,6 +670,20 @@ cmd_docs() {
         fi
     else
         log_error "文档生成脚本不存在: scripts/generate-docs.sh"
+        return 1
+    fi
+}
+
+# AI 监督功能
+cmd_ai() {
+    local subcommand="${1:-help}"
+    shift || true
+
+    # 调用 AI 监督脚本
+    if [ -f "$SCRIPT_DIR/ai-supervisor.sh" ]; then
+        "$SCRIPT_DIR/ai-supervisor.sh" "$subcommand" "$@"
+    else
+        log_error "AI 监督脚本不存在: scripts/ai-supervisor.sh"
         return 1
     fi
 }
@@ -703,7 +725,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        init|validate|doctor|fix|run|test|build|deploy|rollback|monitor|benchmark|analyze|log|docs)
+        init|validate|doctor|fix|run|test|build|deploy|rollback|monitor|benchmark|analyze|log|docs|ai)
             COMMAND="$1"
             shift
             ;;
@@ -761,6 +783,9 @@ case "$COMMAND" in
         ;;
     "docs")
         cmd_docs "$@"
+        ;;
+    "ai")
+        cmd_ai "$@"
         ;;
     "")
         log_error "请指定一个命令"
