@@ -1,0 +1,178 @@
+# =============================================================================
+# AI 监督功能配置文件
+# =============================================================================
+# 此配置文件控制 AI 监督功能的行为
+#
+# 使用方法:
+#   1. 复制此文件并根据需要修改
+#   2. 设置环境变量覆盖配置值:
+#      - CLAUDE_API_KEY: Claude API 密钥
+#      - OPENAI_API_KEY: OpenAI API 密钥
+#      - AI_ENABLED: 启用/禁用 AI 功能
+# =============================================================================
+
+ai:
+  # 是否启用 AI 功能
+  enabled: false
+
+  # AI 提供商: claude | openai | custom
+  provider: "claude"
+
+  # 日志级别: DEBUG | INFO | WARN | ERROR
+  log_level: "INFO"
+
+  # ==========================================================================
+  # API 配置
+  # ==========================================================================
+  api:
+    # Claude API 配置
+    claude:
+      # API 密钥 (建议使用环境变量 CLAUDE_API_KEY)
+      api_key: "${CLAUDE_API_KEY}"
+      # 模型选择
+      model: "claude-sonnet-4-20250514"
+      # 最大 Token 数
+      max_tokens: 4096
+      # API 基础 URL
+      base_url: "https://api.anthropic.com"
+
+    # OpenAI 兼容 API 配置
+    openai:
+      # API 密钥 (建议使用环境变量 OPENAI_API_KEY)
+      api_key: "${OPENAI_API_KEY}"
+      # 模型选择
+      model: "gpt-4"
+      # 最大 Token 数
+      max_tokens: 4096
+      # API 基础 URL (可配置为其他兼容服务)
+      base_url: "https://api.openai.com/v1"
+
+    # API 请求配置
+    request:
+      # 请求超时 (秒)
+      timeout: 60
+      # 重试次数
+      retry_count: 3
+      # 重试间隔 (秒)
+      retry_delay: 2
+
+  # ==========================================================================
+  # 功能模块配置
+  # ==========================================================================
+  features:
+    # 日志分析
+    log_analysis:
+      enabled: true
+      # 是否在错误发生时自动分析
+      auto_analyze: false
+      # 分析时包含的上下文行数
+      context_lines: 50
+      # 支持的日志格式
+      log_formats:
+        - "syslog"
+        - "json"
+        - "plain"
+      # 关注的错误级别
+      error_levels:
+        - "ERROR"
+        - "FATAL"
+        - "CRITICAL"
+
+    # 配置建议
+    config_advisor:
+      enabled: true
+      # 是否启用安全检查
+      security_check: true
+      # 是否启用性能检查
+      performance_check: true
+      # 是否启用最佳实践检查
+      best_practices_check: true
+      # 敏感字段 (不发送给 AI)
+      sensitive_fields:
+        - "password"
+        - "secret"
+        - "token"
+        - "api_key"
+        - "private_key"
+
+    # 健康分析
+    health_analyzer:
+      enabled: true
+      # 检查间隔 (秒)
+      interval: 3600
+      # 健康评分阈值
+      thresholds:
+        critical: 30
+        warning: 60
+        healthy: 80
+      # 监控的指标
+      metrics:
+        - "cpu_usage"
+        - "memory_usage"
+        - "disk_usage"
+        - "error_rate"
+
+    # 告警管理
+    alert_manager:
+      enabled: true
+      # 告警渠道
+      channels:
+        - "log"
+        # - "slack"
+        # - "email"
+      # 告警聚合窗口 (秒)
+      aggregation_window: 300
+      # 最小告警间隔 (秒)
+      min_interval: 60
+      # 告警优先级
+      priorities:
+        critical: 1
+        high: 2
+        medium: 3
+        low: 4
+
+  # ==========================================================================
+  # 缓存配置
+  # ==========================================================================
+  cache:
+    # 是否启用缓存
+    enabled: true
+    # 缓存有效期 (秒)
+    ttl: 3600
+    # 最大缓存条目数
+    max_size: 100
+    # 缓存目录
+    directory: "/tmp/aicd-cache"
+
+  # ==========================================================================
+  # 输出配置
+  # ==========================================================================
+  output:
+    # 输出格式: text | json | markdown
+    format: "text"
+    # 是否显示颜色
+    color: true
+    # 是否显示详细信息
+    verbose: false
+    # 报告保存目录
+    report_dir: "./ai-reports"
+
+  # ==========================================================================
+  # 安全配置
+  # ==========================================================================
+  security:
+    # 是否脱敏敏感数据
+    redact_sensitive: true
+    # 敏感数据模式
+    sensitive_patterns:
+      - "password"
+      - "secret"
+      - "token"
+      - "api[_-]?key"
+      - "private[_-]?key"
+      - "access[_-]?token"
+      - "auth[_-]?token"
+    # 是否记录 API 请求
+    log_requests: false
+    # 是否验证 SSL 证书
+    verify_ssl: true
